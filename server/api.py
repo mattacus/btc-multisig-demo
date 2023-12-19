@@ -12,8 +12,7 @@ def tx(tx_id):
 
 @api.route("blocks/latest_txn")
 def latest_txn():
-    get_latest_block_tip_txn()
-    return {"status": "ok"}
+    return get_latest_block_tip_txn().__repr__()
 
 
 @api.route("/mempool/info")

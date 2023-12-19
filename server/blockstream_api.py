@@ -57,6 +57,9 @@ class BlockstreamApi(metaclass=Singleton):
     def block_get_tip_block_hash(self):
         return self.fetch("blocks/tip/hash")
 
+    def block_get_block_transaction_by_id(self, block_hash, tx_id):
+        return self.fetch(f"block/{block_hash}/txid/{tx_id}")
+
     # --------------- Mempool ---------------
 
     def mempool_get_mempool_info(self):
