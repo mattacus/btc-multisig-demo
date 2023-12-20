@@ -1,5 +1,5 @@
 import logging
-from lib.buidl.buidl import Tx, TxFetcher
+from buidl import Tx, TxFetcher
 from blockstream_api import blockstream
 
 
