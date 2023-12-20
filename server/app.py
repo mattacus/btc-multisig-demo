@@ -1,12 +1,9 @@
 from flask import Flask
 import logging
-from blockstream_api import BlockstreamApi
 from api import api
 from settings import BITCOIN_NETWORK
 
 logging.basicConfig(level=logging.DEBUG)
-
-blockstream = BlockstreamApi("mainnet")
 
 app = Flask(__name__)
 app.register_blueprint(api, url_prefix="/api")
