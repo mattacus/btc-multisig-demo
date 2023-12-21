@@ -1,4 +1,5 @@
 import logging
+import json
 from urllib.request import Request, urlopen
 from settings import BITCOIN_NETWORK
 
@@ -31,8 +32,8 @@ class BlockstreamApi(metaclass=Singleton):
         base_url = f"{URL[self.network]}/{url}"
         req = Request(base_url, headers={"User-Agent": "Mozilla/5.0"})
         try:
-            response = urlopen(req).read().decode("utf-8").strip()
-            return response
+            response = urlopen(req)
+            return json.load(response)
         except ValueError:
             raise ValueError(f"unexpected response: {response}")
 
