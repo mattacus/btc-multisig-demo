@@ -1,6 +1,5 @@
 import logging
-import json
-from urllib.request import Request, urlopen
+import requests
 from settings import BITCOIN_NETWORK
 
 URL = {
@@ -29,19 +28,41 @@ class BlockstreamApi(metaclass=Singleton):
             self.network = "testnet"
 
     def fetch(self, url):
-        base_url = f"{URL[self.network]}/{url}"
-        req = Request(base_url, headers={"User-Agent": "Mozilla/5.0"})
+        base_url = f"{URL[self.network]}{url}"
+        headers = {"User-Agent": "Mozilla/5.0"}
         try:
-            response = urlopen(req)
-            return json.load(response)
-        except ValueError:
-            raise ValueError(f"unexpected response: {response}")
+            response = requests.get(base_url, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logging.error(f"unexpected response: {response}: {e}")
+            try:
+                logging.error(f"response details: {response.text}")
+            except Exception:
+                logging.error("unable to decode response")
+
+    def post(self, url, data, content_type):
+        base_url = f"{URL[self.network]}{url}"
+        headers = {"User-Agent": "Mozilla/5.0", "Content-Type": content_type}
+        try:
+            if content_type == "application/json":
+                response = requests.post(base_url, json=data, headers=headers)
+            else:
+                response = requests.post(base_url, data=data, headers=headers)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.RequestException as e:
+            logging.error(f"unexpected response: {response}: {e}")
+            try:
+                logging.error(f"response details: {response.text}")
+            except Exception:
+                logging.error("unable to decode response")
 
     # --------------- Transactions ---------------
 
     def tx_get_tx(self, tx_id):
         """Get basic information about a transaction"""
-        return self.fetch(f"tx/{tx_id}")
+        return self.fetch(f"/tx/{tx_id}")
 
     def tx_get_tx_status(self, tx_id):
         """Get transaction confirmation status"""
@@ -69,20 +90,24 @@ class BlockstreamApi(metaclass=Singleton):
         """Return the spending status of all transaction outputs"""
         return self.fetch(f"/tx/{tx_id}/outspends")
 
+    def tx_post_tx(self, tx_hex):
+        """Broadcast a transaction to the network"""
+        return self.post("/tx", tx_hex, "text/plain")
+
     # --------------- Addresses ---------------
 
     def addr_get_address_info(self, address, scripthash=False):
         """Get basic information about an address/scripthash"""
         if scripthash:
-            return self.fetch(f"scripthash/{address}")
-        return self.fetch(f"address/{address}")
+            return self.fetch(f"/scripthash/{address}")
+        return self.fetch(f"/address/{address}")
 
     def addr_get_address_tx_history(self, address, scripthash=False):
         """Get transaction history for an address/scripthash,
         sorted with newest first"""
         if scripthash:
-            return self.fetch(f"scripthash/{address}/txs")
-        return self.fetch(f"address/{address}/txs")
+            return self.fetch(f"/scripthash/{address}/txs")
+        return self.fetch(f"/address/{address}/txs")
 
     def addr_get_address_confirmed_tx_history(
         self, address, last_seen_tx_id=None, scripthash=False
@@ -91,9 +116,9 @@ class BlockstreamApi(metaclass=Singleton):
         sorted with newest first"""
         url = ""
         if scripthash:
-            url = f"scripthash/{address}/txs/chain"
+            url = f"/scripthash/{address}/txs/chain"
         else:
-            url = f"address/{address}/txs/chain"
+            url = f"/address/{address}/txs/chain"
         if last_seen_tx_id is not None:
             url += f"/{last_seen_tx_id}"
         return self.fetch(url)
@@ -101,29 +126,29 @@ class BlockstreamApi(metaclass=Singleton):
     def addr_get_address_unconfirmed_tx_history(self, address, scripthash=False):
         """Get unconfirmed (mempool) transaction history for an address/scripthash"""
         if scripthash:
-            return self.fetch(f"scripthash/{address}/txs/mempool")
-        return self.fetch(f"address/{address}/txs/mempool")
+            return self.fetch(f"/scripthash/{address}/txs/mempool")
+        return self.fetch(f"/address/{address}/txs/mempool")
 
     def addr_get_address_utxo(self, address, scripthash=False):
         """Get list of unspent transaction outputs
         associated with an address/scripthash"""
         if scripthash:
-            return self.fetch(f"scripthash/{address}/utxo")
-        return self.fetch(f"address/{address}/utxo")
+            return self.fetch(f"/scripthash/{address}/utxo")
+        return self.fetch(f"/address/{address}/utxo")
 
     # --------------- Blocks ---------------
 
     def block_get_block_info(self, block_hash):
         """Get basic information about a block"""
-        return self.fetch(f"block/{block_hash}")
+        return self.fetch(f"/block/{block_hash}")
 
     def block_get_block_header(self, block_hash):
         """Get the hex-encoded block header for a given block"""
-        return self.fetch(f"block/{block_hash}/header")
+        return self.fetch(f"/block/{block_hash}/header")
 
     def block_get_block_status(self, block_hash):
         """Get block confirmation status"""
-        return self.fetch(f"block/{block_hash}/status")
+        return self.fetch(f"/block/{block_hash}/status")
 
     def block_get_block_txs(self, block_hash, start_index=None):
         """Get up to 25 transactions in a block, beginning at start_index"""
@@ -134,19 +159,19 @@ class BlockstreamApi(metaclass=Singleton):
 
     def block_get_block_txids(self, block_hash):
         """Get the transaction IDs for all transactions in a block"""
-        return self.fetch(f"block/{block_hash}/txids")
+        return self.fetch(f"/block/{block_hash}/txids")
 
     def block_get_transaction_at_index(self, block_hash, index):
         """Get the transaction at a given index in a block"""
-        return self.fetch(f"block/{block_hash}/txid/{index}")
+        return self.fetch(f"/block/{block_hash}/txid/{index}")
 
     def block_get_block_raw(self, block_hash):
         """Get the raw block data for a given block in binary form"""
-        return self.fetch(f"block/{block_hash}/raw")
+        return self.fetch(f"/block/{block_hash}/raw")
 
     def block_get_block_hash_at_height(self, height):
         """Get the block hash for a given block height"""
-        return self.fetch(f"block-height/{height}")
+        return self.fetch(f"/block-height/{height}")
 
     def block_get_blocks(self, start_height=None):
         """Get 10 newest blocks at the tip or from a given block height"""
@@ -157,28 +182,28 @@ class BlockstreamApi(metaclass=Singleton):
 
     def block_get_block_tip_height(self):
         """Get the height of the last block"""
-        return self.fetch("blocks/tip/height")
+        return self.fetch("/blocks/tip/height")
 
     def block_get_tip_block_hash(self):
         """Get the hash of the last block"""
-        return self.fetch("blocks/tip/hash")
+        return self.fetch("/blocks/tip/hash")
 
     # --------------- Mempool ---------------
 
     def mempool_get_mempool_info(self):
         """Get mempool backlog statistics"""
-        return self.fetch("mempool")
+        return self.fetch("/mempool")
 
     def mempool_get_txids(self):
         """Get full list of transaction IDs in mempool"""
-        return self.fetch("mempool/txids")
+        return self.fetch("/mempool/txids")
 
     def mempool_get_fee_estimates(self):
         """
         Get an object where the keys are the confirmation target (number of blocks)
         and the values are estimated feerate (in sat/vB) to use for the target
         """
-        return self.fetch("fee-estimates")
+        return self.fetch("/fee-estimates")
 
 
 blockstream = BlockstreamApi()
