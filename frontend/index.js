@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { CssBaseline } from "@mui/material";
 import { Container, Box } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import MultisigDemoApp from "./components/MultisigDemoApp";
 
@@ -17,15 +18,19 @@ const theme = createTheme({
   },
 });
 
+const queryClient = new QueryClient();
+
 const container = document.getElementById("react");
 const root = createRoot(container);
 root.render(
   <ThemeProvider theme={theme}>
-    <CssBaseline />
-    <Container>
-      <Box sx={{ height: "100vh" }}>
-        <MultisigDemoApp />
-      </Box>
-    </Container>
+    <QueryClientProvider client={queryClient}>
+      <CssBaseline />
+      <Container>
+        <Box sx={{ height: "100vh" }}>
+          <MultisigDemoApp />
+        </Box>
+      </Container>
+    </QueryClientProvider>
   </ThemeProvider>
 );

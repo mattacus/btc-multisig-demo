@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 import logging
 from api import api
 from settings import BITCOIN_NETWORK
@@ -6,6 +7,7 @@ from settings import BITCOIN_NETWORK
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
+CORS(app)
 app.register_blueprint(api, url_prefix="/api")
 
 app.logger.info("Running on Bitcoin network: %s", BITCOIN_NETWORK)
