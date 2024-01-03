@@ -18,7 +18,7 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class BlockstreamApi(metaclass=Singleton):
+class BlockstreamApi:
     def __init__(self, network=None) -> None:
         if network is None:
             network = BITCOIN_NETWORK
@@ -27,13 +27,16 @@ class BlockstreamApi(metaclass=Singleton):
             logging.warning("Invalid network: %s, switching to testnet", network)
             self.network = "testnet"
 
-    def fetch(self, url):
+    def fetch(self, url, json_response=True):
         base_url = f"{URL[self.network]}{url}"
         headers = {"User-Agent": "Mozilla/5.0"}
         try:
             response = requests.get(base_url, headers=headers)
             response.raise_for_status()
-            return response.json()
+            if json_response:
+                return response.json()
+            else:
+                return response.text
         except requests.exceptions.RequestException as e:
             logging.error(f"unexpected response: {response}: {e}")
             try:
@@ -75,7 +78,7 @@ class BlockstreamApi(metaclass=Singleton):
             url += "/raw"
         else:
             url += "/hex"
-        return self.fetch(url)
+        return self.fetch(url, json_response=False)
 
     def tx_get_tx_merkle_block_proof(self, tx_id):
         """Get the merkle block proof that can be used to prove
@@ -144,7 +147,7 @@ class BlockstreamApi(metaclass=Singleton):
 
     def block_get_block_header(self, block_hash):
         """Get the hex-encoded block header for a given block"""
-        return self.fetch(f"/block/{block_hash}/header")
+        return self.fetch(f"/block/{block_hash}/header", json_response=False)
 
     def block_get_block_status(self, block_hash):
         """Get block confirmation status"""
@@ -152,7 +155,7 @@ class BlockstreamApi(metaclass=Singleton):
 
     def block_get_block_txs(self, block_hash, start_index=None):
         """Get up to 25 transactions in a block, beginning at start_index"""
-        url = f"block/{block_hash}/txs"
+        url = f"/block/{block_hash}/txs"
         if start_index is not None:
             url += f"/{start_index}"
         return self.fetch(url)
@@ -163,30 +166,30 @@ class BlockstreamApi(metaclass=Singleton):
 
     def block_get_transaction_at_index(self, block_hash, index):
         """Get the transaction at a given index in a block"""
-        return self.fetch(f"/block/{block_hash}/txid/{index}")
+        return self.fetch(f"/block/{block_hash}/txid/{index}", json_response=False)
 
     def block_get_block_raw(self, block_hash):
         """Get the raw block data for a given block in binary form"""
-        return self.fetch(f"/block/{block_hash}/raw")
+        return self.fetch(f"/block/{block_hash}/raw", json_response=False)
 
     def block_get_block_hash_at_height(self, height):
         """Get the block hash for a given block height"""
-        return self.fetch(f"/block-height/{height}")
+        return self.fetch(f"/block-height/{height}", json_response=False)
 
     def block_get_blocks(self, start_height=None):
         """Get 10 newest blocks at the tip or from a given block height"""
-        url = "blocks"
+        url = "/blocks"
         if start_height is not None:
             url += f"/{start_height}"
         return self.fetch(url)
 
     def block_get_block_tip_height(self):
         """Get the height of the last block"""
-        return self.fetch("/blocks/tip/height")
+        return self.fetch("/blocks/tip/height", json_response=False)
 
     def block_get_tip_block_hash(self):
         """Get the hash of the last block"""
-        return self.fetch("/blocks/tip/hash")
+        return self.fetch("/blocks/tip/hash", json_response=False)
 
     # --------------- Mempool ---------------
 
