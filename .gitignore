@@ -160,3 +160,13 @@ cython_debug/
 #.idea/
 
 */buidl**/
+
+
+# Frontend
+/node_modules
+.parcel-cache
+.dist/
+dist/
+.env
+/src/data/
+/src/img/
