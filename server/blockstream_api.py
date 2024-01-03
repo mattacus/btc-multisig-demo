@@ -36,7 +36,7 @@ class BlockstreamApi:
             if json_response:
                 return response.json()
             else:
-                return response.text
+                return str(response.text)
         except requests.exceptions.RequestException as e:
             logging.error(f"unexpected response: {response}: {e}")
             try:
