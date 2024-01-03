@@ -1,97 +1,93 @@
 import * as React from "react";
-import { listen } from "@ledgerhq/logs";
-import Btc from "@ledgerhq/hw-app-btc";
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import {
-  Grid,
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  CardActions,
-  Button,
-} from "@mui/material";
+import { Divider, Grid, Typography, Collapse, IconButton } from "@mui/material";
+import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+import Grid from "@mui/material/Unstable_Grid2";
+import WalletKeyCard from "./WalletKeyCard";
+import FundingCard from "./FundingCard";
+import SendingCard from "./SendingCard";
+const btcLogo = new URL("../img/bitcoin-symbol.png", import.meta.url);
+
+const CollapseDivider = ({ visible, onClick }) => {
+  return (
+    <Divider sx={{ mt: 2, mb: 2 }}>
+      <IconButton onClick={onClick}>
+        {visible ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+      </IconButton>
+    </Divider>
+  );
+};
 
 const MultisigDemoApp = () => {
-  const [error, setError] = React.useState(null);
-  const [pubKey, setPubKey] = React.useState(null);
-
-  const connectAndGetAddress = async () => {
-    try {
-      const transport = await TransportWebUSB.create();
-      const bip32Path = "44'/1'/0'";
-
-      //listen to the events which are sent by the Ledger packages in order to debug the app
-      listen((log) => console.log(log));
-
-      //When the Ledger device connected it is trying to display the bitcoin address
-      const btc = new Btc({ transport, currency: "bitcoin" });
-      const { bitcoinAddress } = await btc.getWalletPublicKey(bip32Path, {
-        verify: false,
-        format: "p2sh",
-      });
-
-      // Display the address
-      setPubKey(bitcoinAddress);
-
-      //Display the address on the Ledger device and ask to verify the address
-      await btc.getWalletPublicKey(bip32Path, {
-        format: "p2sh",
-        verify: true,
-      });
-    } catch (e) {
-      //Catch any error thrown and displays it on the screen
-      setError(String(e.message || e));
-    }
-  };
+  const [showKeySetup, setShowKeySetup] = React.useState(true);
+  const [showWalletRecieve, setShowWalletRecieve] = React.useState(true);
+  const [showWalletSend, setShowWalletSend] = React.useState(true);
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <Grid container spacing={2}>
-        <Grid item xs={4}>
-          <Card sx={{ height: 200, width: 300 }}>
-            <Grid
-              sx={{ height: "100%" }}
-              container
-              direction={"column"}
-              justifyContent={"space-between"}
-            >
-              <Grid item>
-                <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    Bitcoin Public Key 1
-                  </Typography>
-                  {pubKey && (
-                    <Typography
-                      variant="body2"
-                      sx={{ overflowWrap: "anywhere" }}
-                    >
-                      {pubKey}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Grid>
-              <Grid item>
-                <CardActions>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={connectAndGetAddress}
-                  >
-                    Get Address
-                  </Button>
-                </CardActions>
-              </Grid>
-            </Grid>
-          </Card>
-          {error && (
-            <Typography variant="caption" color="error">
-              Error: {error}
-            </Typography>
-          )}
-        </Grid>
+    <Grid container flexDirection={"column"} spacing={2} sx={{ mt: 1 }}>
+      <Grid
+        sx={{
+          margin: "auto",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <img src={btcLogo} width={50} height={50} alt="logo" />
+        <Typography variant="h3">BTC Multisig Demo</Typography>
       </Grid>
-    </Box>
+      <Grid>
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          Key Setup
+        </Typography>
+        <Collapse in={showKeySetup}>
+          <Grid container spacing={2}>
+            <Grid xs={4}>
+              <WalletKeyCard name={"Hardware Key 1"} />
+            </Grid>
+            <Grid xs={4}>
+              <WalletKeyCard name={"Hardware Key 2"} />
+            </Grid>
+          </Grid>
+        </Collapse>
+        <CollapseDivider
+          visible={showKeySetup}
+          onClick={(e) => {
+            e.preventDefault();
+            setShowKeySetup(!showKeySetup);
+          }}
+        />
+      </Grid>
+      <Grid>
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          Recieve To Multisig Wallet
+        </Typography>
+        <Collapse in={showWalletRecieve}>
+          <FundingCard />
+        </Collapse>
+        <CollapseDivider
+          visible={showWalletRecieve}
+          onClick={(e) => {
+            e.preventDefault();
+            setShowWalletRecieve(!showWalletRecieve);
+          }}
+        />
+      </Grid>
+      <Grid>
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          Send From Multisig Wallet
+        </Typography>
+        <Collapse in={showWalletSend}>
+          <SendingCard />
+        </Collapse>
+        <CollapseDivider
+          visible={showWalletSend}
+          onClick={(e) => {
+            e.preventDefault();
+            setShowWalletSend(!showWalletSend);
+          }}
+        />
+      </Grid>
+    </Grid>
   );
 };
 
