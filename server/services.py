@@ -1,7 +1,7 @@
 import logging
 from buidl import TxFetcher, PrivateKey
 from blockstream_api import blockstream
-from util import format_plaintext_private_key_secret
+from util import format_plaintext_private_key_secret, sat_to_btc
 from settings import TESTNET_SECRET_REACH, TESTNET_SECRET_HARVEST, BITCOIN_NETWORK
 
 
@@ -37,3 +37,16 @@ def get_testnet_funding_addresses():
     ]
 
     return legacy_addresses + segwit_addresses
+
+
+def get_address_basic_info(address):
+    """
+    Given an address, return basic info about it
+    """
+    addr_info = blockstream.addr_get_address_info(address)
+    if addr_info:
+        return {
+            "utxo_count": addr_info["chain_stats"]["funded_txo_count"],
+            "funded_utxo_sum": sat_to_btc(addr_info["chain_stats"]["funded_txo_sum"]),
+        }
+    return {}

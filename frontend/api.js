@@ -29,6 +29,22 @@ class BackendAPI {
     }
     return response.json();
   }
+
+  async fetchAddressInfo(address) {
+    let fetchUrl = `${this.fetchConfig.basePath}/api/address/${address}/info`;
+
+    const response = await fetch(fetchUrl, {
+      headers: this.fetchConfig.headers,
+    });
+    if (!response.ok) {
+      this.defaultErrorHandler(
+        response.status,
+        response.statusText,
+        "Fetch Funding Addresses"
+      );
+    }
+    return response.json();
+  }
 }
 
 const backendApi = new BackendAPI();

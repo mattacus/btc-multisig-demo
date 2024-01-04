@@ -14,3 +14,10 @@ def btc_to_sat(btc_amount):
     Convert a BTC amount to satoshis
     """
     return int(math.ceil(btc_amount * 100_000_000))
+
+
+def sat_to_btc(sat_amount):
+    """
+    Convert a satoshi amount to BTC
+    """
+    return sat_amount / 100_000_000
