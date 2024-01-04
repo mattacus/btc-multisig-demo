@@ -1,0 +1,24 @@
+# Dotfiles, cache, build artifacts, test, etc.
+.dockerignore
+.circleci
+.gitignore
+.pylintrc
+docker-compose.yml
+Makefile
+
+# Cache
+.pytest_cache/
+__pycache__/
+.mypy_cache/
+.parcel-cache/
+
+# Node.js dependencies
+node_modules/
+
+# IDE stuff
+.idea
+.vscode
+
+.coverage
+!.coveragerc
+!.pylintrc

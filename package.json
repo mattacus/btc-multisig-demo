@@ -6,7 +6,7 @@
   "description": "",
   "main": "frontend/index.js",
   "scripts": {
-    "start": "parcel frontend/index.html",
+    "start": "parcel frontend/index.html --port=3000",
     "build": "parcel build frontend/index.html"
   },
   "targets": {

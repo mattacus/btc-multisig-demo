@@ -1,0 +1,29 @@
+version: "3.5"
+
+services:
+  server:
+    build:
+        context: .
+        dockerfile: ./Dockerfile
+    container_name: btc-multisig-server
+    tty: true
+    stdin_open: true
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    ports:
+      - 8000:8000
+
+  frontend:
+    image: node:20-bullseye-slim
+    env_file:
+      - .env
+    user: node
+    container_name: btc-multisig-frontend
+    volumes:
+      - .:/frontend
+    ports:
+      - 3000:3000
+    working_dir: /frontend
+    command: bash -c "npm install && npm start"
