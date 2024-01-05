@@ -1,11 +1,23 @@
 import * as React from "react";
-import { Divider, Grid, Typography, Collapse, IconButton } from "@mui/material";
-import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+const btcLogo = new URL("../img/bitcoin-symbol.png", import.meta.url);
+import {
+  Divider,
+  Grid,
+  Typography,
+  Collapse,
+  IconButton,
+  CircularProgress,
+} from "@mui/material";
+import {
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+  AddCircle,
+} from "@mui/icons-material";
 import Grid from "@mui/material/Unstable_Grid2";
-import WalletKeyCard from "./WalletKeyCard";
+import PublicKeyCard from "./PublicKeyCard";
 import FundingCard from "./FundingCard";
 import SendingCard from "./SendingCard";
-const btcLogo = new URL("../img/bitcoin-symbol.png", import.meta.url);
+import { useMultisigKeyContext } from "../multisigKeyContext";
 
 const CollapseDivider = ({ visible, onClick }) => {
   return (
@@ -18,9 +30,13 @@ const CollapseDivider = ({ visible, onClick }) => {
 };
 
 const MultisigDemoApp = () => {
+  const multisigKeyState = useMultisigKeyContext();
   const [showKeySetup, setShowKeySetup] = React.useState(true);
-  const [showWalletRecieve, setShowWalletRecieve] = React.useState(true);
-  const [showWalletSend, setShowWalletSend] = React.useState(true);
+  const [showAddressRecieve, setShowAddressRecieve] = React.useState(true);
+  const [showAddressSend, setShowAddressSend] = React.useState(true);
+
+  const isCreateMultisigAddressEnabled =
+    Object.keys(multisigKeyState.publicKeyList).length >= 2;
 
   return (
     <Grid container flexDirection={"column"} spacing={2} sx={{ mt: 1 }}>
@@ -42,10 +58,40 @@ const MultisigDemoApp = () => {
         <Collapse in={showKeySetup}>
           <Grid container spacing={2}>
             <Grid xs={4}>
-              <WalletKeyCard name={"Hardware Key 1"} />
+              <PublicKeyCard name={"Hardware Key 1"} keyIndex={0} />
             </Grid>
             <Grid xs={4}>
-              <WalletKeyCard name={"Hardware Key 2"} />
+              <PublicKeyCard name={"Hardware Key 2"} keyIndex={1} />
+            </Grid>
+            <Grid
+              container
+              direction={"column"}
+              xs={2}
+              alignItems="center"
+              justifyContent="center"
+              spacing={1}
+            >
+              <Grid>
+                <IconButton
+                  size="large"
+                  disabled={!isCreateMultisigAddressEnabled}
+                  color="primary"
+                >
+                  <AddCircle fontSize="inherit" />
+                </IconButton>
+              </Grid>
+              <Grid>
+                <Typography
+                  variant="body1"
+                  color={
+                    isCreateMultisigAddressEnabled
+                      ? "text.primary"
+                      : "text.secondary"
+                  }
+                >
+                  Create Multisig Address
+                </Typography>
+              </Grid>
             </Grid>
           </Grid>
         </Collapse>
@@ -59,31 +105,31 @@ const MultisigDemoApp = () => {
       </Grid>
       <Grid>
         <Typography variant="h6" sx={{ mb: 1 }}>
-          Recieve To Multisig Wallet
+          Recieve To Multisig Address
         </Typography>
-        <Collapse in={showWalletRecieve}>
+        <Collapse in={showAddressRecieve}>
           <FundingCard />
         </Collapse>
         <CollapseDivider
-          visible={showWalletRecieve}
+          visible={showAddressRecieve}
           onClick={(e) => {
             e.preventDefault();
-            setShowWalletRecieve(!showWalletRecieve);
+            setShowAddressRecieve(!showAddressRecieve);
           }}
         />
       </Grid>
       <Grid>
         <Typography variant="h6" sx={{ mb: 1 }}>
-          Send From Multisig Wallet
+          Send From Multisig Address
         </Typography>
-        <Collapse in={showWalletSend}>
+        <Collapse in={showAddressSend}>
           <SendingCard />
         </Collapse>
         <CollapseDivider
-          visible={showWalletSend}
+          visible={showAddressSend}
           onClick={(e) => {
             e.preventDefault();
-            setShowWalletSend(!showWalletSend);
+            setShowAddressSend(!showAddressSend);
           }}
         />
       </Grid>
