@@ -1,5 +1,7 @@
 // import Cookies from "js-cookie";
 
+import { execPath } from "process";
+
 const { SERVER_BASE_URL } = process.env;
 
 class BackendAPI {
@@ -21,11 +23,20 @@ class BackendAPI {
       headers: this.fetchConfig.headers,
     });
     if (!response.ok) {
-      this.defaultErrorHandler(
-        response.status,
-        response.statusText,
-        "Fetch Funding Addresses"
-      );
+      try {
+        const responseBody = await response.json();
+        this.defaultErrorHandler(
+          response.status,
+          JSON.stringify(responseBody),
+          "Fetch Funding Address"
+        );
+      } catch {
+        this.defaultErrorHandler(
+          response.status,
+          response.statusText,
+          "Fetch Funding Addresses"
+        );
+      }
     }
     return response.json();
   }
@@ -37,10 +48,41 @@ class BackendAPI {
       headers: this.fetchConfig.headers,
     });
     if (!response.ok) {
+      try {
+        const responseBody = await response.json();
+        this.defaultErrorHandler(
+          response.status,
+          JSON.stringify(responseBody),
+          "Fetch Address Info"
+        );
+      } catch {
+        this.defaultErrorHandler(
+          response.status,
+          response.statusText,
+          "Fetch Address Info"
+        );
+      }
+    }
+    return response.json();
+  }
+
+  async createMultisigAddress(publicKeys, quorum_m) {
+    let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/get_p2sh_multisig_address`;
+
+    const response = await fetch(fetchUrl, {
+      method: "POST",
+      headers: {
+        ...this.fetchConfig.headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ publicKeys, quorum: quorum_m }),
+    });
+    if (!response.ok) {
+      const responseBody = await response.json();
       this.defaultErrorHandler(
         response.status,
-        response.statusText,
-        "Fetch Funding Addresses"
+        JSON.stringify(responseBody),
+        "Fetch Multisig Address"
       );
     }
     return response.json();

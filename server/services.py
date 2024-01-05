@@ -1,5 +1,6 @@
 import logging
-import json
+
+from flask import jsonify
 from buidl import TxFetcher, PrivateKey
 from buidl.script import RedeemScript
 from blockstream_api import blockstream
@@ -58,16 +59,22 @@ def create_address_p2sh(pubkeys, quorum):
     """
     Given a list of public keys, create a P2SH address and return it as well as the redeem script
     """
-    if len(pubkeys) < 2:
-        raise ValueError("Must provide at least two public keys")
+    try:
+        sorted_pubkeys = [pubkeys[i] for i in sorted(pubkeys)]
 
-    redeem_script = RedeemScript.create_p2sh_multisig(
-        quorum_m=quorum,
-        pubkey_hexes=pubkeys,
-        sort_keys=False,
-    )
+        if len(sorted_pubkeys) < 2:
+            raise ValueError("Must provide at least two public keys")
 
-    return {
-        "address": redeem_script.address(BITCOIN_NETWORK),
-        "redeem_script": redeem_script.__repr__(),
-    }
+        redeem_script = RedeemScript.create_p2sh_multisig(
+            quorum_m=quorum,
+            pubkey_hexes=sorted_pubkeys,
+            sort_keys=False,
+        )
+
+        return {
+            "address": redeem_script.address(BITCOIN_NETWORK),
+            "redeem_script": redeem_script.__repr__(),
+        }
+    except Exception as e:
+        logging.exception(e)
+        return jsonify(error=str(e)), 400

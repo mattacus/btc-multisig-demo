@@ -1,22 +1,12 @@
 import * as React from "react";
 const btcLogo = new URL("../img/bitcoin-symbol.png", import.meta.url);
-import {
-  Divider,
-  Grid,
-  Typography,
-  Collapse,
-  IconButton,
-  CircularProgress,
-} from "@mui/material";
-import {
-  KeyboardArrowDown,
-  KeyboardArrowUp,
-  AddCircle,
-} from "@mui/icons-material";
+import { Divider, Grid, Typography, Collapse, IconButton } from "@mui/material";
+import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import Grid from "@mui/material/Unstable_Grid2";
 import PublicKeyCard from "./PublicKeyCard";
 import FundingCard from "./FundingCard";
 import SendingCard from "./SendingCard";
+import KeySetupControls from "./KeySetupControls";
 import { useMultisigKeyContext } from "../multisigKeyContext";
 
 const CollapseDivider = ({ visible, onClick }) => {
@@ -35,8 +25,7 @@ const MultisigDemoApp = () => {
   const [showAddressRecieve, setShowAddressRecieve] = React.useState(true);
   const [showAddressSend, setShowAddressSend] = React.useState(true);
 
-  const isCreateMultisigAddressEnabled =
-    Object.keys(multisigKeyState.publicKeyList).length >= 2;
+  console.log(multisigKeyState);
 
   return (
     <Grid container flexDirection={"column"} spacing={2} sx={{ mt: 1 }}>
@@ -56,41 +45,16 @@ const MultisigDemoApp = () => {
           Key Setup
         </Typography>
         <Collapse in={showKeySetup}>
-          <Grid container spacing={2}>
-            <Grid xs={4}>
-              <PublicKeyCard name={"Hardware Key 1"} keyIndex={0} />
+          <Grid container flexDirection={"column"} spacing={2}>
+            <Grid>
+              <KeySetupControls />
             </Grid>
-            <Grid xs={4}>
-              <PublicKeyCard name={"Hardware Key 2"} keyIndex={1} />
-            </Grid>
-            <Grid
-              container
-              direction={"column"}
-              xs={2}
-              alignItems="center"
-              justifyContent="center"
-              spacing={1}
-            >
-              <Grid>
-                <IconButton
-                  size="large"
-                  disabled={!isCreateMultisigAddressEnabled}
-                  color="primary"
-                >
-                  <AddCircle fontSize="inherit" />
-                </IconButton>
+            <Grid container wrap="wrap" spacing={2}>
+              <Grid xs={4}>
+                <PublicKeyCard name={"Hardware Key 1"} keyIndex={0} />
               </Grid>
-              <Grid>
-                <Typography
-                  variant="body1"
-                  color={
-                    isCreateMultisigAddressEnabled
-                      ? "text.primary"
-                      : "text.secondary"
-                  }
-                >
-                  Create Multisig Address
-                </Typography>
+              <Grid xs={4}>
+                <PublicKeyCard name={"Hardware Key 2"} keyIndex={1} />
               </Grid>
             </Grid>
           </Grid>
