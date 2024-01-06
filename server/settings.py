@@ -1,5 +1,7 @@
 from os import environ
 
 BITCOIN_NETWORK = environ.get("BITCOIN_NETWORK")
-TESTNET_SECRET_REACH = environ.get("TESTNET_SECRET_REACH")
-TESTNET_SECRET_HARVEST = environ.get("TESTNET_SECRET_HARVEST")
+TESTNET_FUNDING_ADDRESS_SECRETS = environ.get("FUNDING_ADDRESS_SECRETS")
+FEE_BUMP_SATS = (
+    10  # add some satoshis to fee estimate to help ensure transaction is confirmed
+)
