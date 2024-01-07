@@ -1,7 +1,3 @@
-// import Cookies from "js-cookie";
-
-import { execPath } from "process";
-
 const { SERVER_BASE_URL } = process.env;
 
 class BackendAPI {
@@ -108,7 +104,8 @@ class BackendAPI {
     fundingAddress,
     multisigAddress,
     amount,
-    feeRate
+    feeRate,
+    publish
   ) {
     let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/fund_multisig_address`;
 
@@ -123,7 +120,7 @@ class BackendAPI {
         destination_address: multisigAddress,
         funding_amount: amount,
         fee_rate: feeRate,
-        publish: "True",
+        publish: publish.toString(),
       }),
     });
     if (!response.ok) {

@@ -12,6 +12,7 @@ from util import (
     select_address_utxos_lifo,
     sign_all_transactions,
 )
+from calc_tx_size import calc_tx_size
 from settings import BITCOIN_NETWORK, FEE_BUMP_SATS
 
 
@@ -78,6 +79,7 @@ def send_testnet_payment_from_funding_address(
 ):
     """
     Send a payment from a special (funding) address to a destination address
+    Only supports P2PKH and P2WPKH addresses
     """
     try:
         funding_keys = get_testnet_funding_private_keys()
@@ -101,24 +103,18 @@ def send_testnet_payment_from_funding_address(
         )
         logging.info(f"Selected spending UTXOs: {spending_utxos}")
         spending_amount_sats = sum([utxo["value"] for utxo in spending_utxos])
-        tx_ins = []
-        for utxo in spending_utxos:
-            tx_ins.append(TxIn(bytes.fromhex(utxo["txid"]), utxo["vout"]))
-        tx_outs = [
-            TxOut.to_address(destination_address, funding_amount_sats),
-            TxOut.to_address(
-                funding_address, spending_amount_sats - funding_amount_sats
-            ),  # change address is funding address, these are testnet coins for funding so not worried about address reuse
-        ]
-        funding_tx = Tx(
-            1, tx_ins, tx_outs, 0, network=BITCOIN_NETWORK, segwit=is_segwit
+
+        # Get TX Size Upper Bound
+        tx_size_stats = calc_tx_size(
+            input_script=("P2PKH" if not is_segwit else "P2WPKH"),
+            input_count=1,
+            p2pkh_output_count=(1 if not is_segwit else 0),
+            p2wpkh_output_count=(1 if is_segwit else 0),
+            p2sh_output_count=1
         )
+        tx_size = tx_size_stats["tx_vbytes"]
+        logging.info(f"Calculated transaction size upper bound: {tx_size_stats["tx_vbytes"]} vbytes")
 
-        # Sign the inputs
-        sign_all_transactions(funding_tx, funding_private_key)
-
-        # Estimate fees on the transaction object before sending
-        tx_size = funding_tx.vbytes()
         tx_fees = tx_size * fee_rate + FEE_BUMP_SATS
         final_change_amount = spending_amount_sats - funding_amount_sats - tx_fees
         if final_change_amount < 0:
@@ -127,13 +123,19 @@ def send_testnet_payment_from_funding_address(
                 Short by {abs(final_change_amount)} sats. Try a lower fee rate, or reduce the transaction amount"
             )
 
-        tx_outs_adjusted = [
+        tx_ins = []
+        for utxo in spending_utxos:
+            tx_ins.append(TxIn(bytes.fromhex(utxo["txid"]), utxo["vout"]))
+        tx_outs = [
             TxOut.to_address(destination_address, funding_amount_sats),
-            TxOut.to_address(funding_address, final_change_amount),
+            TxOut.to_address(
+                funding_address, final_change_amount
+            ),  # change address is funding address, these are testnet coins for funding so not worried about address reuse
         ]
-        funding_tx.tx_outs = tx_outs_adjusted
+        funding_tx = Tx(
+            1, tx_ins, tx_outs, 0, network=BITCOIN_NETWORK, segwit=is_segwit
+        )
 
-        # Re-sign transaction
         sign_all_transactions(funding_tx, funding_private_key)
 
         logging.info(f"Funding transaction: {funding_tx}")

@@ -16,6 +16,8 @@ import {
   Slider,
   Alert,
   AlertTitle,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import backendApi from "../api";
@@ -32,6 +34,7 @@ const FundingCard = () => {
   const [fundingAmount, setFundingAmount] = React.useState(
     DEFAULT_FUNDING_AMOUNT_BTC
   );
+  const [isDebugTransaction, setIsDebugTransaction] = React.useState(true);
   const [sendAddress, setSendAddress] = React.useState("");
   const [feeRate, setFeeRate] = React.useState(1);
 
@@ -73,12 +76,19 @@ const FundingCard = () => {
   });
 
   const createFundingTransactionMutation = useMutation({
-    mutationFn: ({ fundingAddress, multisigAddress, amount, feeRate }) =>
+    mutationFn: ({
+      fundingAddress,
+      multisigAddress,
+      amount,
+      feeRate,
+      publish,
+    }) =>
       backendApi.createFundingTransaction(
         fundingAddress,
         multisigAddress,
         amount,
-        feeRate
+        feeRate,
+        publish
       ),
   });
   const {
@@ -250,11 +260,22 @@ const FundingCard = () => {
                     multisigAddress: sendAddress,
                     amount: fundingAmount,
                     feeRate: feeRate,
+                    publish: !isDebugTransaction,
                   });
                 }}
               >
                 Fund Multisig Wallet
               </Button>
+              <FormControlLabel
+                control={
+                  <Switch
+                    sx={{ ml: 1 }}
+                    checked={isDebugTransaction}
+                    onChange={(e) => setIsDebugTransaction(e.target.checked)}
+                  />
+                }
+                label="Debug"
+              />
             </Grid>
             <Grid sx={{ mt: -8 }}>
               {isSuccessCreateFundingTransaction && fundingTransactionData && (
