@@ -79,7 +79,7 @@ class BackendAPI {
   }
 
   async createMultisigAddress(publicKeys, quorum_m) {
-    let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/get_p2sh_multisig_address`;
+    let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/create_p2sh_multisig_address`;
 
     const response = await fetch(fetchUrl, {
       method: "POST",
@@ -94,7 +94,7 @@ class BackendAPI {
       this.defaultErrorHandler(
         response.status,
         JSON.stringify(responseBody),
-        "Fetch Multisig Address"
+        "Create Multisig Address"
       );
     }
     return response.json();

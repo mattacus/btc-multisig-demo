@@ -25,7 +25,7 @@ def address_info(address):
     return get_address_basic_info(address)
 
 
-@api.route("multisig/get_p2sh_multisig_address", methods=["POST"])
+@api.route("multisig/create_p2sh_multisig_address", methods=["POST"])
 def get_p2sh_multisig_address():
     data = request.get_json()
     pubkeys = data.get("publicKeys")
