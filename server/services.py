@@ -10,7 +10,7 @@ from util import (
     sat_to_btc,
     btc_to_sat,
     select_address_utxos_lifo,
-    sign_all_transactions,
+    sign_all_transaction_inputs,
 )
 from calc_tx_size import calc_tx_size
 from settings import BITCOIN_NETWORK, FEE_BUMP_SATS
@@ -136,7 +136,7 @@ def send_testnet_payment_from_funding_address(
             1, tx_ins, tx_outs, 0, network=BITCOIN_NETWORK, segwit=is_segwit
         )
 
-        sign_all_transactions(funding_tx, funding_private_key)
+        sign_all_transaction_inputs(funding_tx, funding_private_key)
 
         logging.info(f"Funding transaction: {funding_tx}")
 

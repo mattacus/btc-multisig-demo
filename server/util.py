@@ -65,7 +65,7 @@ def select_address_utxos_lifo(utxos, transaction_total_sats):
     return selected_utxos
 
 
-def sign_all_transactions(tx_obj, private_key):
+def sign_all_transaction_inputs(tx_obj, private_key):
     """
     Sign all inputs in a transaction and make sure they are all valid
     """

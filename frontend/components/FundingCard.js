@@ -8,6 +8,8 @@ import {
   Typography,
   CardActions,
   Button,
+  IconButton,
+  Tooltip,
   FormControl,
   InputLabel,
   Select,
@@ -18,6 +20,7 @@ import {
   AlertTitle,
   FormControlLabel,
   Switch,
+  Snackbar,
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import backendApi from "../api";
@@ -27,8 +30,14 @@ import {
   FEE_RATE_MIN_CONFIRMATION_TARGET,
   FEE_RATE_MAX_CONFIRMATION_TARGET,
 } from "../const";
+import { ContentCopy, OpenInNew } from "@mui/icons-material";
 
 const FundingCard = () => {
+  const [snackbarStatus, setSnackbarStatus] = React.useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const multisigKeyState = useMultisigKeyContext();
   const [fundingAccount, setFundingAccount] = React.useState("");
   const [fundingAmount, setFundingAmount] = React.useState(
@@ -144,6 +153,31 @@ const FundingCard = () => {
       errors.push(errorCreateFundingTransaction);
     }
     return errors;
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarStatus({ ...snackbarStatus, open: false });
+  };
+
+  const handleTxClipboardCopy = async () => {
+    const permissions = await navigator.permissions.query({
+      name: "clipboard-write",
+    });
+    console.log(permissions);
+    if (!permissions.state || permissions.state !== "granted") {
+      setSnackbarStatus({
+        open: true,
+        severity: "error",
+        message:
+          "Clipboard write permission denied.  Try enabling it in your browser settings.",
+      });
+    }
+    await navigator.clipboard.writeText(fundingTransactionData.tx_id);
+    setSnackbarStatus({
+      open: true,
+      severity: "info",
+      message: "Transaction ID Copied to Clipboard",
+    });
   };
 
   return (
@@ -279,10 +313,44 @@ const FundingCard = () => {
             </Grid>
             <Grid sx={{ mt: -8 }}>
               {isSuccessCreateFundingTransaction && fundingTransactionData && (
-                <Alert severity="info">
-                  <AlertTitle>Transaction Posted to Network</AlertTitle>
-                  <strong>Transaction ID: </strong>
-                  <br />
+                <Alert
+                  severity="info"
+                  action={
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Tooltip title="Copy to Clipboard">
+                        <IconButton
+                          color="inherit"
+                          size="small"
+                          onClick={handleTxClipboardCopy}
+                        >
+                          <ContentCopy />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Open in Block Explorer">
+                        <IconButton
+                          color="inherit"
+                          size="small"
+                          onClick={() => {
+                            window.open(
+                              `${process.env.BLOCK_EXPLORER_URL}/${fundingTransactionData.tx_id}`,
+                              "_blank"
+                            );
+                          }}
+                        >
+                          <OpenInNew />
+                        </IconButton>
+                      </Tooltip>
+                    </div>
+                  }
+                >
+                  <AlertTitle>Transaction ID:</AlertTitle>
                   {fundingTransactionData.tx_id}
                 </Alert>
               )}
@@ -297,6 +365,19 @@ const FundingCard = () => {
       ) : (
         <p />
       )}
+      <Snackbar
+        open={snackbarStatus.open}
+        autoHideDuration={5000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarStatus.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarStatus.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
