@@ -63,17 +63,3 @@ def select_address_utxos_lifo(utxos, transaction_total_sats):
             )
         )
     return selected_utxos
-
-
-def sign_all_transaction_inputs(tx_obj, private_key):
-    """
-    Sign all inputs in a transaction and make sure they are all valid
-    """
-    signatures_valid = True
-    for i in range(len(tx_obj.tx_ins)):
-        sig_valid = tx_obj.sign_input(i, private_key)
-        if not sig_valid:
-            signatures_valid = False
-            break
-    if not signatures_valid:
-        raise Exception("Unable to sign transaction inputs")

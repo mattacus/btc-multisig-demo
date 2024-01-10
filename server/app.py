@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app)
 app.register_blueprint(api, url_prefix="/api")
 
-app.logger.info("Running on Bitcoin network: %s", BITCOIN_NETWORK)
+app.logger.info("Using Bitcoin network: %s", BITCOIN_NETWORK)
 
 
 @app.route("/")

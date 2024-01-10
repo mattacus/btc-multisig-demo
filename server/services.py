@@ -10,7 +10,6 @@ from util import (
     sat_to_btc,
     btc_to_sat,
     select_address_utxos_lifo,
-    sign_all_transaction_inputs,
 )
 from calc_tx_size import calc_tx_size
 from settings import BITCOIN_NETWORK, FEE_BUMP_SATS
@@ -136,9 +135,12 @@ def send_testnet_payment_from_funding_address(
             1, tx_ins, tx_outs, 0, network=BITCOIN_NETWORK, segwit=is_segwit
         )
 
-        sign_all_transaction_inputs(funding_tx, funding_private_key)
+        for i in range(len(funding_tx.tx_ins)):
+            sig_valid = funding_tx.sign_input(i, funding_private_key)
+            if not sig_valid:
+                raise Exception("Unable to sign transaction inputs")
 
-        logging.info(f"Funding transaction: {funding_tx}")
+            logging.info(f"Funding transaction: {funding_tx}")
 
         if publish:
             tx_raw = funding_tx.serialize().hex()
