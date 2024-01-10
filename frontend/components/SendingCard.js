@@ -21,13 +21,13 @@ const SendingCard = () => {
         >
           <Grid>
             <CardContent>
-              <Typography gutterBottom>Spend from Multisig Wallet</Typography>
+              <Typography gutterBottom>Multisig Sending Details</Typography>
             </CardContent>
           </Grid>
           <Grid>
             <CardActions>
-              <Button size="small" variant="outlined">
-                Send From Wallet
+              <Button size="small" variant="contained">
+                Send from multisig address
               </Button>
             </CardActions>
           </Grid>

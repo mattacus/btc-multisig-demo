@@ -184,7 +184,7 @@ const FundingCard = () => {
     <>
       <Card>
         <CardContent>
-          <Typography gutterBottom>Testnet Funding Account</Typography>
+          <Typography gutterBottom>Testnet Funding Details</Typography>
           <Grid container wrap="nowrap">
             <Grid container direction={"column"} spacing={1} xs={8}>
               <Grid container spacing={2}>
@@ -263,7 +263,7 @@ const FundingCard = () => {
             <Grid container direction={"column"} spacing={1}>
               <TextField
                 required
-                label="Multisig Wallet Address"
+                label="Multisig Address"
                 type="string"
                 multiline
                 sx={{ minWidth: 250 }}
@@ -298,7 +298,7 @@ const FundingCard = () => {
                   });
                 }}
               >
-                Fund Multisig Wallet
+                Fund Multisig Address
               </Button>
               <FormControlLabel
                 control={

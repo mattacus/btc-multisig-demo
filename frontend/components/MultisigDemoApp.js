@@ -1,6 +1,14 @@
 import * as React from "react";
 const btcLogo = new URL("../img/bitcoin-symbol.png", import.meta.url);
-import { Divider, Grid, Typography, Collapse, IconButton } from "@mui/material";
+import {
+  Divider,
+  Grid,
+  Typography,
+  Collapse,
+  IconButton,
+  Alert,
+  AlertTitle,
+} from "@mui/material";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import Grid from "@mui/material/Unstable_Grid2";
 import PublicKeyCard from "./PublicKeyCard";
@@ -8,6 +16,8 @@ import FundingCard from "./FundingCard";
 import SendingCard from "./SendingCard";
 import KeySetupControls from "./KeySetupControls";
 import { useMultisigKeyContext } from "../multisigKeyContext";
+
+const { BITCOIN_NETWORK } = process.env;
 
 const CollapseDivider = ({ visible, onClick }) => {
   return (
@@ -26,7 +36,6 @@ const MultisigDemoApp = () => {
   const [showAddressSend, setShowAddressSend] = React.useState(true);
 
   console.log(multisigKeyState);
-  console.log(Array(multisigKeyState.quorum));
 
   return (
     <Grid container flexDirection={"column"} spacing={2} sx={{ mt: 1 }}>
@@ -81,7 +90,19 @@ const MultisigDemoApp = () => {
           }}
         />
         <Collapse in={showAddressRecieve}>
-          <FundingCard />
+          {BITCOIN_NETWORK === "testnet" ? (
+            <FundingCard />
+          ) : (
+            <Alert severity="warning">
+              <AlertTitle>Only Available for Testnet</AlertTitle>
+              <br />
+              <p>
+                This funding feature is only available for testnet! If you are
+                using real bitcoin and accept the risks, please fund your newly
+                created multisig address above using a different wallet or tool.
+              </p>
+            </Alert>
+          )}
         </Collapse>
       </Grid>
       <Grid>
