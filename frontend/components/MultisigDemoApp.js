@@ -26,6 +26,7 @@ const MultisigDemoApp = () => {
   const [showAddressSend, setShowAddressSend] = React.useState(true);
 
   console.log(multisigKeyState);
+  console.log(Array(multisigKeyState.quorum));
 
   return (
     <Grid container flexDirection={"column"} spacing={2} sx={{ mt: 1 }}>
@@ -44,21 +45,6 @@ const MultisigDemoApp = () => {
         <Typography variant="h6" sx={{ mb: 1 }}>
           Key Setup
         </Typography>
-        <Collapse in={showKeySetup}>
-          <Grid container flexDirection={"column"} spacing={2}>
-            <Grid>
-              <KeySetupControls />
-            </Grid>
-            <Grid container wrap="wrap" spacing={2}>
-              <Grid xs={4}>
-                <PublicKeyCard name={"Hardware Key 1"} keyIndex={0} />
-              </Grid>
-              <Grid xs={4}>
-                <PublicKeyCard name={"Hardware Key 2"} keyIndex={1} />
-              </Grid>
-            </Grid>
-          </Grid>
-        </Collapse>
         <CollapseDivider
           visible={showKeySetup}
           onClick={(e) => {
@@ -66,14 +52,27 @@ const MultisigDemoApp = () => {
             setShowKeySetup(!showKeySetup);
           }}
         />
+        <Collapse in={showKeySetup}>
+          <Grid container flexDirection={"column"} spacing={2}>
+            <Grid>
+              <KeySetupControls />
+            </Grid>
+            <Grid container wrap="wrap" spacing={2}>
+              {Array(multisigKeyState.quorum.n)
+                .fill("")
+                .map((_, i) => (
+                  <Grid xs={4} key={`Public Key ${i + 1}`}>
+                    <PublicKeyCard name={`Public Key ${i + 1}`} keyIndex={i} />
+                  </Grid>
+                ))}
+            </Grid>
+          </Grid>
+        </Collapse>
       </Grid>
       <Grid>
         <Typography variant="h6" sx={{ mb: 1 }}>
           Recieve To Multisig Address
         </Typography>
-        <Collapse in={showAddressRecieve}>
-          <FundingCard />
-        </Collapse>
         <CollapseDivider
           visible={showAddressRecieve}
           onClick={(e) => {
@@ -81,14 +80,14 @@ const MultisigDemoApp = () => {
             setShowAddressRecieve(!showAddressRecieve);
           }}
         />
+        <Collapse in={showAddressRecieve}>
+          <FundingCard />
+        </Collapse>
       </Grid>
       <Grid>
         <Typography variant="h6" sx={{ mb: 1 }}>
           Send From Multisig Address
         </Typography>
-        <Collapse in={showAddressSend}>
-          <SendingCard />
-        </Collapse>
         <CollapseDivider
           visible={showAddressSend}
           onClick={(e) => {
@@ -96,6 +95,9 @@ const MultisigDemoApp = () => {
             setShowAddressSend(!showAddressSend);
           }}
         />
+        <Collapse in={showAddressSend}>
+          <SendingCard />
+        </Collapse>
       </Grid>
     </Grid>
   );

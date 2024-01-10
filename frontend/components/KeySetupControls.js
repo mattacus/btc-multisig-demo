@@ -71,7 +71,7 @@ const KeySetupControls = () => {
             <Grid>
               <NumberInput
                 label="Quorum N (Total Keys)"
-                min={0}
+                min={2}
                 max={MAX_KEYS}
                 decimalScale={0}
                 initialValue={multisigKeyState.quorum.n}
