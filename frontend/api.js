@@ -133,6 +133,38 @@ class BackendAPI {
     }
     return response.json();
   }
+
+  async createUnsignedTransaction(
+    sendAddress,
+    receiveAddress,
+    amount,
+    feeRate
+  ) {
+    let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/create_unsigned_transaction`;
+
+    const response = await fetch(fetchUrl, {
+      method: "POST",
+      headers: {
+        ...this.fetchConfig.headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        send_address: sendAddress,
+        receive_address: receiveAddress,
+        send_amount: amount,
+        fee_rate: feeRate,
+      }),
+    });
+    if (!response.ok) {
+      const responseBody = await response.json();
+      this.defaultErrorHandler(
+        response.status,
+        JSON.stringify(responseBody),
+        "Create Unsigned Transaction"
+      );
+    }
+    return response.json();
+  }
 }
 
 const backendApi = new BackendAPI();

@@ -1,5 +1,6 @@
 from buidl import PrivateKey
 from buidl.helper import hash256, little_endian_to_int
+from buidl.script import decode_bech32
 from settings import TESTNET_FUNDING_ADDRESS_SECRETS
 import math
 
@@ -37,9 +38,31 @@ def get_testnet_funding_private_keys():
     return keys
 
 
-def select_address_utxos_lifo(utxos, transaction_total_sats):
+def get_address_script_type(address):
     """
-    Select UTXOS to fund a transaction, from a single address
+    Determine the script type of the address,
+    for the address types supported by this application
+    """
+    if address[0] in ["1", "m", "n"]:
+        return "P2PKH"
+    elif address[0] in ["2", "3"]:
+        return "P2SH"
+    elif address[0:3] in ["bc1", "tb1"]:
+        _, version, h = decode_bech32(address)
+        if version == 0:
+            if len(h) == 20:
+                return "P2WPKH"
+            elif len(h) == 32:
+                return "P2WSH"
+            else:
+                raise Exception(f"{address} is not a valid bech32 address")
+    else:
+        raise Exception(f"Unsupported address type for address: {address}")
+
+
+def select_utxos_lifo(utxos, transaction_total_sats):
+    """
+    Select UTXOS to fund a transaction, from a list of spent and unspent UTXOs
     Uses a simple LIFO strategy (use up oldest address UTXOs until transaction is funded)
     """
     selected_utxos = []

@@ -4,12 +4,14 @@ from flask import jsonify
 from buidl import PrivateKey
 from buidl.tx import Tx, TxIn, TxOut
 from buidl.script import RedeemScript
+from buidl.helper import int_to_big_endian
 from blockstream_api import blockstream
 from util import (
     get_testnet_funding_private_keys,
     sat_to_btc,
     btc_to_sat,
-    select_address_utxos_lifo,
+    select_utxos_lifo,
+    get_address_script_type
 )
 from calc_tx_size import calc_tx_size
 from settings import BITCOIN_NETWORK, FEE_BUMP_SATS
@@ -97,8 +99,8 @@ def send_testnet_payment_from_funding_address(
 
         funding_address_utxos = blockstream.addr_get_address_utxo(funding_address)
         funding_amount_sats = btc_to_sat(funding_amount_btc)
-        spending_utxos = select_address_utxos_lifo(
-            funding_address_utxos, btc_to_sat(funding_amount_btc)
+        spending_utxos = select_utxos_lifo(
+            funding_address_utxos, funding_amount_sats
         )
         logging.info(f"Selected spending UTXOs: {spending_utxos}")
         spending_amount_sats = sum([utxo["value"] for utxo in spending_utxos])
@@ -106,7 +108,7 @@ def send_testnet_payment_from_funding_address(
         # Get TX Size Upper Bound
         tx_size_stats = calc_tx_size(
             input_script=("P2PKH" if not is_segwit else "P2WPKH"),
-            input_count=1,
+            input_count=len(spending_utxos),
             p2pkh_output_count=(1 if not is_segwit else 0),
             p2wpkh_output_count=(1 if is_segwit else 0),
             p2sh_output_count=1
@@ -154,6 +156,73 @@ def send_testnet_payment_from_funding_address(
                 return jsonify(error="Error publishing transaction"), 400
 
         return {"tx_id": funding_tx.id(), "status": "debug"}
+    except Exception as e:
+        logging.exception(e)
+        return jsonify(error=str(e)), 400
+
+
+def create_unsigned_transaction_multisig(send_address, receive_address, send_amount_btc, fee_rate):
+    """
+    Create an unsigned transaction for sending coins from a multisig address to another single address
+    Return the raw transaction object as well as the signature hashes for signing on the frontend with a hardware wallet
+    """
+    try:
+        send_address_script_type = get_address_script_type(send_address)
+        receive_address_script_type = get_address_script_type(receive_address)
+        if send_address_script_type not in ["P2SH", "P2WSH"]:
+            raise Exception("This endpoint only supports P2SH and P2WSH multisig spending addresses")
+        is_segwit_tx = send_address_script_type == "P2WSH"
+
+        sending_address_utxos = blockstream.addr_get_address_utxo(send_address)
+        sending_amount_sats = btc_to_sat(send_amount_btc)
+        spending_utxos = select_utxos_lifo(
+            sending_address_utxos, sending_amount_sats
+        )
+        logging.info(f"Selected spending UTXOs: {spending_utxos}")
+        available_spending_amount_sats = sum([utxo["value"] for utxo in spending_utxos])
+
+        # Get TX Size Upper Bound
+        tx_size_stats = calc_tx_size(
+            input_script=(send_address_script_type),
+            input_count=len(spending_utxos),
+            p2pkh_output_count=(1 if receive_address_script_type == "P2PKH" else 0),
+            p2wpkh_output_count=(1 if receive_address_script_type == "P2WPKH" else 0),
+        )
+        tx_size = tx_size_stats["tx_vbytes"]
+        logging.info(f"Calculated transaction size upper bound: {tx_size} vbytes")
+
+        tx_fees = tx_size * fee_rate + FEE_BUMP_SATS
+        final_change_amount = available_spending_amount_sats - sending_amount_sats - tx_fees
+        if final_change_amount < 0:
+            raise Exception(
+                f"Insufficient UTXO total to cover transaction fees. \
+                Short by {abs(final_change_amount)} sats. Try a lower fee rate, or reduce the transaction amount"
+            )
+
+        tx_ins = []
+        for utxo in spending_utxos:
+            tx_ins.append(TxIn(bytes.fromhex(utxo["txid"]), utxo["vout"]))
+        tx_outs = [
+            TxOut.to_address(receive_address, sending_amount_sats),
+            TxOut.to_address(
+                send_address, final_change_amount
+            ),  # change goes back to the same sending address for now
+        ]
+        unsigned_tx_obj = Tx(1, tx_ins, tx_outs, 0, network=BITCOIN_NETWORK, segwit=is_segwit_tx)
+        logging.info(f"Created unsigned transaction: {unsigned_tx_obj}")
+
+        signature_hashes = []
+        if is_segwit_tx:
+            for i in range(len(unsigned_tx_obj.tx_ins)):
+                # TODO: Add redeemscript
+                signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_bip143(i), 32).hex())
+        else:
+            for i in range(len(unsigned_tx_obj.tx_ins)):
+                # TODO: Add redeemscript, witness script
+                signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i), 32).hex())
+
+        return {"tx_raw": unsigned_tx_obj.serialize().hex(), "sig_hash_list": signature_hashes}
+
     except Exception as e:
         logging.exception(e)
         return jsonify(error=str(e)), 400

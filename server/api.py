@@ -4,6 +4,7 @@ from services import (
     get_address_basic_info,
     create_address_p2sh,
     send_testnet_payment_from_funding_address,
+    create_unsigned_transaction_multisig,
 )
 from blockstream_api import blockstream
 
@@ -49,4 +50,20 @@ def fund_multisig_address():
         float(funding_amount_btc),
         int(fee_rate),
         publish.lower() == "true",
+    )
+
+
+@api.route("multisig/create_unsigned_transaction", methods=["POST"])
+def create_unsigned_multisig_transaction():
+    data = request.get_json()
+    send_address = data.get("send_address")
+    receive_address = data.get("receive_address")
+    send_amount_btc = data.get("send_amount")
+    fee_rate = data.get("fee_rate")
+
+    return create_unsigned_transaction_multisig(
+        send_address,
+        receive_address,
+        float(send_amount_btc),
+        int(fee_rate),
     )

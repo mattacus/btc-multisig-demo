@@ -63,6 +63,21 @@ const SendingCard = () => {
     queryFn: () => backendApi.fetchFeeEstimates(),
   });
 
+  const createUnsignedTransactionMutation = useMutation({
+    mutationFn: ({ sendAddress, receiveAddress, amount, feeRate }) =>
+      backendApi.createUnsignedTransaction(
+        sendAddress,
+        receiveAddress,
+        amount,
+        feeRate
+      ),
+  });
+  const {
+    data: unsignedTransactionData,
+    isError: isErrorCreateUnsignedTransaction,
+    error: errorCreateUnsignedTransaction,
+  } = createUnsignedTransactionMutation;
+
   const getErrors = () => {
     let errors = [];
     if (isErrorAddressInfo) {
@@ -71,9 +86,14 @@ const SendingCard = () => {
     if (isErrorFeeEstimates) {
       errors.push(errorFeeEstimates.message);
     }
+    if (isErrorCreateUnsignedTransaction) {
+      errors.push(errorCreateUnsignedTransaction);
+    }
 
     return errors;
   };
+
+  console.log(unsignedTransactionData);
 
   return (
     <>
@@ -114,7 +134,14 @@ const SendingCard = () => {
                   size="small"
                   variant="contained"
                   disabled={!isTransactionCreationEnabled}
-                  onClick={() => {}}
+                  onClick={() => {
+                    createUnsignedTransactionMutation.mutate({
+                      sendAddress: sendingAddress,
+                      receiveAddress: receivingAddress,
+                      amount: sendingAmount,
+                      feeRate: feeRate,
+                    });
+                  }}
                 >
                   Create Transaction for Signing
                 </Button>
