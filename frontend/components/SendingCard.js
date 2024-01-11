@@ -50,8 +50,8 @@ const SendingCard = () => {
     enabled: !!sendingAddress,
   });
 
-  // const isSendingEnabled =
-  //   sendingAddress && addressInfo && sendingAmount > 0 && receivingAddress;
+  const isTransactionCreationEnabled =
+    sendingAddress && addressInfo && sendingAmount > 0 && receivingAddress;
   const isSendingEnabled = false;
 
   const {
@@ -108,6 +108,16 @@ const SendingCard = () => {
                   feeMin={getFeeRatesRange(feeEstimates).min}
                   feeMax={getFeeRatesRange(feeEstimates).max}
                 />
+              </Grid>
+              <Grid sx={{ ml: -1 }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  disabled={!isTransactionCreationEnabled}
+                  onClick={() => {}}
+                >
+                  Create Transaction for Signing
+                </Button>
               </Grid>
             </Grid>
             <Grid container direction={"column"} spacing={1}>

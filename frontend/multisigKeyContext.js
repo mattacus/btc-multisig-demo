@@ -10,6 +10,7 @@ const initialState = {
     n: 2,
   },
   multisigAddress: null,
+  signatures: {},
 };
 
 const initialStateTEST = {
@@ -22,6 +23,7 @@ const initialStateTEST = {
     n: 2,
   },
   multisigAddress: null,
+  signatures: {},
 };
 
 const reducer = (state, action) => {
@@ -46,6 +48,14 @@ const reducer = (state, action) => {
       return {
         ...state,
         multisigAddress: action.payload,
+      };
+    case "ADD_SIGNATURE":
+      return {
+        ...state,
+        signatures: {
+          ...state.signatures,
+          [action.payload.keyIndex]: action.payload.value,
+        },
       };
     default:
       return state;

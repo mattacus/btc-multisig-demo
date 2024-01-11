@@ -12,6 +12,7 @@ import {
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import Grid from "@mui/material/Unstable_Grid2";
 import PublicKeyCard from "./PublicKeyCard";
+import SignatureCard from "./SignatureCard";
 import FundingCard from "./FundingCard";
 import SendingCard from "./SendingCard";
 import KeySetupControls from "./KeySetupControls";
@@ -118,6 +119,18 @@ const MultisigDemoApp = () => {
         />
         <Collapse in={showAddressSend}>
           <SendingCard />
+          <Grid container wrap="wrap" spacing={2}>
+            {Array(multisigKeyState.quorum.n)
+              .fill("")
+              .map((_, i) => (
+                <Grid xs={4} key={`Signature ${i + 1}`}>
+                  <SignatureCard
+                    name={`Signature for Key ${i + 1}`}
+                    keyIndex={i}
+                  />
+                </Grid>
+              ))}
+          </Grid>
         </Collapse>
       </Grid>
     </Grid>

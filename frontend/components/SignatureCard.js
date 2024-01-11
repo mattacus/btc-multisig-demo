@@ -10,8 +10,6 @@ import {
   CardActions,
   Button,
   TextField,
-  Alert,
-  AlertTitle,
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import {
@@ -29,7 +27,7 @@ const DEFAULTS = {
 
 const { BITCOIN_NETWORK } = process.env;
 
-const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
+const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
   const multisigKeyState = useMultisigKeyContext();
   const multisigKeyDispatch = useMultisigKeyDispatchContext();
 
@@ -38,9 +36,7 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
     DEFAULTS.bip32Path[BITCOIN_NETWORK] + "/" + keyIndex
   );
 
-  const pubKey = multisigKeyState.publicKeyList[keyIndex];
-
-  const connectAndGetAddress = async () => {
+  const connectAndGetSignature = async () => {
     try {
       const transport = await TransportWebUSB.create();
       const format = DEFAULTS.deviceFormat;
@@ -52,16 +48,7 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
 
       const btc = new Btc({ transport, currency: currency });
 
-      // Display the address
-      const response = await btc.getWalletPublicKey(keyDerivationPath, {
-        verify: false,
-        format: format,
-      });
-      const { publicKey } = response;
-      multisigKeyDispatch({
-        type: "ADD_PUBLIC_KEY",
-        payload: { keyIndex: keyIndex, value: publicKey },
-      });
+      // TODO
     } catch (e) {
       //Catch any error thrown and displays it on the screen
       setError(String(e.message || e));
@@ -100,12 +87,20 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
                   />
                 </Grid>
                 <Grid>
-                  {pubKey && (
-                    <Alert severity="info" sx={{ overflowWrap: "anywhere" }}>
-                      <AlertTitle>Public Key:</AlertTitle>
-                      <p>{pubKey}</p>
-                    </Alert>
-                  )}
+                  <>
+                    <Typography
+                      variant="body1"
+                      sx={{ overflowWrap: "anywhere" }}
+                    >
+                      Signature Data:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ overflowWrap: "anywhere" }}
+                    >
+                      {""}
+                    </Typography>
+                  </>
                 </Grid>
               </Grid>
             </CardContent>
@@ -117,10 +112,10 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
                 variant="outlined"
                 onClick={() => {
                   setError(null);
-                  connectAndGetAddress();
+                  connectAndGetSignature();
                 }}
               >
-                Get Public Key
+                Sign Transaction
               </Button>
             </CardActions>
           </Grid>
@@ -137,4 +132,4 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
   );
 };
 
-export default PublicKeyCard;
+export default SignatureCard;
