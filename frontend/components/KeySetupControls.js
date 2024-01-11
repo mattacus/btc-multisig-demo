@@ -11,13 +11,13 @@ import {
 } from "@mui/material";
 
 import Grid from "@mui/material/Unstable_Grid2";
-import NumberInput from "./NumberInput";
+import NumberInput from "./shared/NumberInput";
 import {
   useMultisigKeyContext,
   useMultisigKeyDispatchContext,
 } from "../multisigKeyContext";
 import backendApi from "../api";
-import { MAX_KEYS } from "../const";
+import { MIN_KEYS, MAX_KEYS } from "../const";
 import { Download } from "@mui/icons-material";
 
 const KeySetupControls = () => {
@@ -70,23 +70,8 @@ const KeySetupControls = () => {
           >
             <Grid>
               <NumberInput
-                label="Quorum N (Total Keys)"
-                min={2}
-                max={MAX_KEYS}
-                decimalScale={0}
-                initialValue={multisigKeyState.quorum.n}
-                onChange={(val) => {
-                  multisigKeyDispatch({
-                    type: "UPDATE_QUORUM",
-                    payload: { n: val },
-                  });
-                }}
-              />
-            </Grid>
-            <Grid>
-              <NumberInput
-                label="Quorum M (Required Keys)"
-                min={0}
+                label="Required Keys (Quorum M)"
+                min={1}
                 max={multisigKeyState.quorum.n}
                 decimalScale={0}
                 initialValue={multisigKeyState.quorum.m}
@@ -94,6 +79,21 @@ const KeySetupControls = () => {
                   multisigKeyDispatch({
                     type: "UPDATE_QUORUM",
                     payload: { m: val },
+                  });
+                }}
+              />
+            </Grid>
+            <Grid>
+              <NumberInput
+                label="Total Keys (Quorum N)"
+                min={MIN_KEYS}
+                max={MAX_KEYS}
+                decimalScale={0}
+                initialValue={multisigKeyState.quorum.n}
+                onChange={(val) => {
+                  multisigKeyDispatch({
+                    type: "UPDATE_QUORUM",
+                    payload: { n: val },
                   });
                 }}
               />

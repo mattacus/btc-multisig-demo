@@ -28,7 +28,7 @@ class BackendAPI {
     return response.json();
   }
 
-  async fetchFundingAddresses() {
+  async fetchTestnetFundingAddresses() {
     let fetchUrl = `${this.fetchConfig.basePath}/api/funding/addresses`;
 
     const response = await fetch(fetchUrl, {
@@ -40,13 +40,13 @@ class BackendAPI {
         this.defaultErrorHandler(
           response.status,
           JSON.stringify(responseBody),
-          "Fetch Funding Address"
+          "Fetch Testnet Funding Address"
         );
       } catch {
         this.defaultErrorHandler(
           response.status,
           response.statusText,
-          "Fetch Funding Addresses"
+          "Fetch Testnet Funding Addresses"
         );
       }
     }
