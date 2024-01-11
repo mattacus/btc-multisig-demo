@@ -15,9 +15,9 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import {
-  useMultisigKeyContext,
-  useMultisigKeyDispatchContext,
-} from "../multisigKeyContext";
+  useMultisigContext,
+  useMultisigDispatchContext,
+} from "../MultisigContext";
 
 const DEFAULTS = {
   deviceFormat: "legacy",
@@ -30,15 +30,15 @@ const DEFAULTS = {
 const { BITCOIN_NETWORK } = process.env;
 
 const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
-  const multisigKeyState = useMultisigKeyContext();
-  const multisigKeyDispatch = useMultisigKeyDispatchContext();
+  const multisigContext = useMultisigContext();
+  const multisigDispatch = useMultisigDispatchContext();
 
   const [error, setError] = React.useState(null);
   const [keyDerivationPath, setKeyDerivationPath] = React.useState(
     DEFAULTS.bip32Path[BITCOIN_NETWORK] + "/" + keyIndex
   );
 
-  const pubKey = multisigKeyState.publicKeyList[keyIndex];
+  const pubKey = multisigContext.publicKeyList[keyIndex];
 
   const connectAndGetAddress = async () => {
     try {
@@ -58,7 +58,7 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
         format: format,
       });
       const { publicKey } = response;
-      multisigKeyDispatch({
+      multisigDispatch({
         type: "ADD_PUBLIC_KEY",
         payload: { keyIndex: keyIndex, value: publicKey },
       });

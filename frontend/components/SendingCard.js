@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import backendApi from "../api";
-import { useMultisigKeyContext } from "../multisigKeyContext";
+import { useMultisigContext } from "../MultisigContext";
 import { DEFAULT_SENDING_AMOUNT_BTC } from "../const";
 import AddressInfoBox from "./shared/AddressInfoBox";
 import TransactionInfoBox from "./shared/TransactionInfoBox";
@@ -22,7 +22,7 @@ import AddressSelect from "./shared/AddressSelect";
 import { getFeeRatesRange } from "../util";
 
 const SendingCard = () => {
-  const multisigKeyState = useMultisigKeyContext();
+  const multisigContext = useMultisigContext();
 
   const [sendingAddress, setSendingAddress] = React.useState("");
   const [sendingAmount, setSendingAmount] = React.useState(
@@ -32,12 +32,12 @@ const SendingCard = () => {
   const [receivingAddress, setReceivingAddress] = React.useState("");
   const [isDebugTransaction, setIsDebugTransaction] = React.useState(true);
 
-  // Update sendAddress when multisigKeyState.address changes
+  // Update sendAddress when multisigContext.address changes
   React.useEffect(() => {
-    if (multisigKeyState.multisigAddress) {
-      setSendingAddress(multisigKeyState.multisigAddress);
+    if (multisigContext.multisigAddress) {
+      setSendingAddress(multisigContext.multisigAddress);
     }
-  }, [multisigKeyState]);
+  }, [multisigContext]);
 
   const {
     data: addressInfo,
@@ -70,8 +70,8 @@ const SendingCard = () => {
         receiveAddress,
         amount,
         feeRate,
-        multisigKeyState.publicKeyList,
-        multisigKeyState.quorum.m
+        multisigContext.publicKeyList,
+        multisigContext.quorum.m
       ),
   });
   const {

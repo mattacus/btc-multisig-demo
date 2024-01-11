@@ -19,13 +19,13 @@ import TransactionInfoBox from "./shared/TransactionInfoBox";
 import TransactionAmountInputs from "./shared/TransactionAmountInputs";
 import AddressSelect from "./shared/AddressSelect";
 import backendApi from "../api";
-import { useMultisigKeyContext } from "../multisigKeyContext";
+import { useMultisigContext } from "../MultisigContext";
 import { DEFAULT_FUNDING_AMOUNT_BTC } from "../const";
 import AddressInfoBox from "./shared/AddressInfoBox";
 import { getFeeRatesRange } from "../util";
 
 const FundingCard = () => {
-  const multisigKeyState = useMultisigKeyContext();
+  const multisigContext = useMultisigContext();
 
   const [snackbarStatus, setSnackbarStatus] = React.useState({
     open: false,
@@ -40,12 +40,12 @@ const FundingCard = () => {
   const [isDebugTransaction, setIsDebugTransaction] = React.useState(true);
   const [sendAddress, setSendAddress] = React.useState("");
 
-  // Update sendAddress when multisigKeyState.address changes
+  // Update sendAddress when multisigContext.address changes
   React.useEffect(() => {
-    if (multisigKeyState.multisigAddress) {
-      setSendAddress(multisigKeyState.multisigAddress);
+    if (multisigContext.multisigAddress) {
+      setSendAddress(multisigContext.multisigAddress);
     }
-  }, [multisigKeyState]);
+  }, [multisigContext]);
 
   const {
     data: addressInfo,

@@ -13,25 +13,25 @@ import {
 import Grid from "@mui/material/Unstable_Grid2";
 import NumberInput from "./shared/NumberInput";
 import {
-  useMultisigKeyContext,
-  useMultisigKeyDispatchContext,
-} from "../multisigKeyContext";
+  useMultisigContext,
+  useMultisigDispatchContext,
+} from "../MultisigContext";
 import backendApi from "../api";
 import { MIN_KEYS, MAX_KEYS } from "../const";
 import { Download } from "@mui/icons-material";
 
 const KeySetupControls = () => {
-  const multisigKeyState = useMultisigKeyContext();
-  const multisigKeyDispatch = useMultisigKeyDispatchContext();
+  const multisigContext = useMultisigContext();
+  const multisigDispatch = useMultisigDispatchContext();
 
   const isCreateMultisigAddressEnabled =
-    Object.keys(multisigKeyState.publicKeyList).length >= 2;
+    Object.keys(multisigContext.publicKeyList).length >= 2;
 
   const createMultisigAddressMutation = useMutation({
     mutationFn: ({ pubKeys, quorum }) =>
       backendApi.createMultisigAddress(pubKeys, quorum, "p2sh"),
     onSuccess: (data) => {
-      multisigKeyDispatch({
+      multisigDispatch({
         type: "SET_MULTISIG_ADDRESS",
         payload: data.address,
       });
@@ -72,11 +72,11 @@ const KeySetupControls = () => {
               <NumberInput
                 label="Required Keys (Quorum M)"
                 min={1}
-                max={multisigKeyState.quorum.n}
+                max={multisigContext.quorum.n}
                 decimalScale={0}
-                initialValue={multisigKeyState.quorum.m}
+                initialValue={multisigContext.quorum.m}
                 onChange={(val) => {
-                  multisigKeyDispatch({
+                  multisigDispatch({
                     type: "UPDATE_QUORUM",
                     payload: { m: val },
                   });
@@ -89,9 +89,9 @@ const KeySetupControls = () => {
                 min={MIN_KEYS}
                 max={MAX_KEYS}
                 decimalScale={0}
-                initialValue={multisigKeyState.quorum.n}
+                initialValue={multisigContext.quorum.n}
                 onChange={(val) => {
-                  multisigKeyDispatch({
+                  multisigDispatch({
                     type: "UPDATE_QUORUM",
                     payload: { n: val },
                   });
@@ -104,8 +104,8 @@ const KeySetupControls = () => {
                 disabled={!isCreateMultisigAddressEnabled}
                 onClick={() => {
                   createMultisigAddressMutation.mutate({
-                    pubKeys: multisigKeyState.publicKeyList,
-                    quorum: multisigKeyState.quorum.m,
+                    pubKeys: multisigContext.publicKeyList,
+                    quorum: multisigContext.quorum.m,
                   });
                 }}
               >

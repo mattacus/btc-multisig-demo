@@ -13,9 +13,9 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import {
-  useMultisigKeyContext,
-  useMultisigKeyDispatchContext,
-} from "../multisigKeyContext";
+  useMultisigContext,
+  useMultisigDispatchContext,
+} from "../MultisigContext";
 
 const DEFAULTS = {
   deviceFormat: "legacy",
@@ -28,8 +28,8 @@ const DEFAULTS = {
 const { BITCOIN_NETWORK } = process.env;
 
 const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
-  const multisigKeyState = useMultisigKeyContext();
-  const multisigKeyDispatch = useMultisigKeyDispatchContext();
+  const multisigContext = useMultisigContext();
+  const multisigDispatch = useMultisigDispatchContext();
 
   const [error, setError] = React.useState(null);
   const [keyDerivationPath, setKeyDerivationPath] = React.useState(

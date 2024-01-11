@@ -16,7 +16,7 @@ import SignatureCard from "./SignatureCard";
 import FundingCard from "./FundingCard";
 import SendingCard from "./SendingCard";
 import KeySetupControls from "./KeySetupControls";
-import { useMultisigKeyContext } from "../multisigKeyContext";
+import { useMultisigContext } from "../MultisigContext";
 
 const { BITCOIN_NETWORK } = process.env;
 
@@ -31,12 +31,12 @@ const CollapseDivider = ({ visible, onClick }) => {
 };
 
 const MultisigDemoApp = () => {
-  const multisigKeyState = useMultisigKeyContext();
+  const multisigContext = useMultisigContext();
   const [showKeySetup, setShowKeySetup] = React.useState(true);
   const [showAddressRecieve, setShowAddressRecieve] = React.useState(true);
   const [showAddressSend, setShowAddressSend] = React.useState(true);
 
-  console.log(multisigKeyState);
+  console.log(multisigContext);
 
   return (
     <Grid container flexDirection={"column"} spacing={2} sx={{ mt: 1 }}>
@@ -68,7 +68,7 @@ const MultisigDemoApp = () => {
               <KeySetupControls />
             </Grid>
             <Grid container wrap="wrap" spacing={2}>
-              {Array(multisigKeyState.quorum.n)
+              {Array(multisigContext.quorum.n)
                 .fill("")
                 .map((_, i) => (
                   <Grid xs={4} key={`Public Key ${i + 1}`}>
@@ -120,7 +120,7 @@ const MultisigDemoApp = () => {
         <Collapse in={showAddressSend}>
           <SendingCard />
           <Grid container wrap="wrap" spacing={2}>
-            {Array(multisigKeyState.quorum.n)
+            {Array(multisigContext.quorum.n)
               .fill("")
               .map((_, i) => (
                 <Grid xs={4} key={`Signature ${i + 1}`}>

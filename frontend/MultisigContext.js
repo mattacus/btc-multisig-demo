@@ -1,7 +1,7 @@
 import React from "react";
 
-const MultisigKeyContext = React.createContext(null);
-const MultisigKeyDispatchContext = React.createContext(null);
+const MultisigContext = React.createContext(null);
+const MultisigDispatchContext = React.createContext(null);
 
 const initialState = {
   publicKeyList: {},
@@ -62,22 +62,22 @@ const reducer = (state, action) => {
   }
 };
 
-export const MultisigKeyContextProvider = ({ children }) => {
+export const MultisigContextProvider = ({ children }) => {
   const [state, dispatch] = React.useReducer(reducer, initialStateTEST);
 
   return (
-    <MultisigKeyContext.Provider value={state}>
-      <MultisigKeyDispatchContext.Provider value={dispatch}>
+    <MultisigContext.Provider value={state}>
+      <MultisigDispatchContext.Provider value={dispatch}>
         {children}
-      </MultisigKeyDispatchContext.Provider>
-    </MultisigKeyContext.Provider>
+      </MultisigDispatchContext.Provider>
+    </MultisigContext.Provider>
   );
 };
 
-export function useMultisigKeyContext() {
-  return React.useContext(MultisigKeyContext);
+export function useMultisigContext() {
+  return React.useContext(MultisigContext);
 }
 
-export function useMultisigKeyDispatchContext() {
-  return React.useContext(MultisigKeyDispatchContext);
+export function useMultisigDispatchContext() {
+  return React.useContext(MultisigDispatchContext);
 }

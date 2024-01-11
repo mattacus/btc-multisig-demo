@@ -6,7 +6,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import MultisigDemoApp from "./components/MultisigDemoApp";
-import { MultisigKeyContextProvider } from "./multisigKeyContext";
+import { MultisigContextProvider } from "./MultisigContext";
 
 const theme = createTheme({
   palette: {
@@ -29,9 +29,9 @@ root.render(
       <CssBaseline />
       <Container>
         <Box sx={{ height: "100vh" }}>
-          <MultisigKeyContextProvider>
+          <MultisigContextProvider>
             <MultisigDemoApp />
-          </MultisigKeyContextProvider>
+          </MultisigContextProvider>
         </Box>
       </Container>
     </QueryClientProvider>
