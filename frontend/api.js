@@ -78,8 +78,16 @@ class BackendAPI {
     return response.json();
   }
 
-  async createMultisigAddress(publicKeys, quorum_m) {
-    let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/create_p2sh_multisig_address`;
+  async createMultisigAddress(publicKeys, quorum, addressType) {
+    let endpoint;
+    if (addressType === "p2sh") {
+      endpoint = "create_p2sh_multisig";
+    } else if (addressType === "p2wsh") {
+      endpoint = "create_p2wsh_multisig";
+    } else {
+      throw new Error("Invalid multisig address type");
+    }
+    let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/${endpoint}`;
 
     const response = await fetch(fetchUrl, {
       method: "POST",
@@ -87,7 +95,7 @@ class BackendAPI {
         ...this.fetchConfig.headers,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ publicKeys, quorum: quorum_m }),
+      body: JSON.stringify({ public_keys: publicKeys, quorum }),
     });
     if (!response.ok) {
       const responseBody = await response.json();
@@ -134,11 +142,13 @@ class BackendAPI {
     return response.json();
   }
 
-  async createUnsignedTransaction(
+  async createUnsignedMultisigTransaction(
     sendAddress,
     receiveAddress,
     amount,
-    feeRate
+    feeRate,
+    publicKeys,
+    quorum
   ) {
     let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/create_unsigned_transaction`;
 
@@ -153,6 +163,8 @@ class BackendAPI {
         receive_address: receiveAddress,
         send_amount: amount,
         fee_rate: feeRate,
+        public_keys: publicKeys,
+        quorum,
       }),
     });
     if (!response.ok) {

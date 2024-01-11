@@ -50,26 +50,34 @@ def get_address_basic_info(address):
     return {}
 
 
-def create_address_p2sh(pubkeys, quorum):
+def construct_p2sh_address_redeem_script(pubkeys, quorum):
+    """
+    Reconstruct a Redeem Script from a combination of public keys and a quorum
+    """
+    sorted_pubkeys = [pubkeys[i] for i in sorted(pubkeys)]
+
+    if len(sorted_pubkeys) < 2:
+        raise ValueError("Must provide at least two public keys")
+
+    return RedeemScript.create_p2sh_multisig(
+        quorum_m=quorum,
+        pubkey_hexes=sorted_pubkeys,
+        sort_keys=False,
+    )
+
+
+def create_p2sh_address_details(pubkeys, quorum):
     """
     Given a list of public keys, create a P2SH address and return it as well as the redeem script
     """
     try:
-        sorted_pubkeys = [pubkeys[i] for i in sorted(pubkeys)]
-
-        if len(sorted_pubkeys) < 2:
-            raise ValueError("Must provide at least two public keys")
-
-        redeem_script = RedeemScript.create_p2sh_multisig(
-            quorum_m=quorum,
-            pubkey_hexes=sorted_pubkeys,
-            sort_keys=False,
-        )
+        redeem_script = construct_p2sh_address_redeem_script(pubkeys, quorum)
 
         return {
             "address": redeem_script.address(BITCOIN_NETWORK),
-            "redeem_script": redeem_script.__repr__(),
+            "redeem_script": redeem_script.__repr__()
         }
+
     except Exception as e:
         logging.exception(e)
         return jsonify(error=str(e)), 400
@@ -85,15 +93,16 @@ def send_testnet_payment_from_funding_address(
     try:
         funding_keys = get_testnet_funding_private_keys()
         funding_private_key = None
-        is_segwit = False
+        funding_address_type = get_address_script_type(funding_address)
         for key in funding_keys:
-            if key.point.address(network=BITCOIN_NETWORK) == funding_address:
-                funding_private_key = key
-                break
-            elif key.point.p2wpkh_address(network=BITCOIN_NETWORK) == funding_address:
-                funding_private_key = key
-                is_segwit = True
-                break
+            if funding_address_type == "P2PKH":
+                if key.point.address(network=BITCOIN_NETWORK) == funding_address:
+                    funding_private_key = key
+                    break
+            elif funding_address_type == "P2WPKH":
+                if key.point.p2wpkh_address(network=BITCOIN_NETWORK) == funding_address:
+                    funding_private_key = key
+                    break
         if not funding_private_key:
             raise Exception(f"No matching private key for address {funding_address}")
 
@@ -107,10 +116,10 @@ def send_testnet_payment_from_funding_address(
 
         # Get TX Size Upper Bound
         tx_size_stats = calc_tx_size(
-            input_script=("P2PKH" if not is_segwit else "P2WPKH"),
+            input_script=(funding_address_type),
             input_count=len(spending_utxos),
-            p2pkh_output_count=(1 if not is_segwit else 0),
-            p2wpkh_output_count=(1 if is_segwit else 0),
+            p2pkh_output_count=(1 if funding_address_type == "P2PKH" else 0),
+            p2wpkh_output_count=(1 if funding_address_type == "P2WPKH" else 0),
             p2sh_output_count=1
         )
         tx_size = tx_size_stats["tx_vbytes"]
@@ -134,7 +143,8 @@ def send_testnet_payment_from_funding_address(
             ),  # change address is funding address, these are testnet coins for funding so not worried about address reuse
         ]
         funding_tx = Tx(
-            1, tx_ins, tx_outs, 0, network=BITCOIN_NETWORK, segwit=is_segwit
+            1, tx_ins, tx_outs, 0, network=BITCOIN_NETWORK,
+            segwit=(funding_address_type == "P2WPKH")
         )
 
         for i in range(len(funding_tx.tx_ins)):
@@ -161,7 +171,7 @@ def send_testnet_payment_from_funding_address(
         return jsonify(error=str(e)), 400
 
 
-def create_unsigned_transaction_multisig(send_address, receive_address, send_amount_btc, fee_rate):
+def create_unsigned_transaction_multisig(send_address, receive_address, send_amount_btc, fee_rate, public_keys, quorum):
     """
     Create an unsigned transaction for sending coins from a multisig address to another single address
     Return the raw transaction object as well as the signature hashes for signing on the frontend with a hardware wallet
@@ -172,6 +182,17 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
         if send_address_script_type not in ["P2SH", "P2WSH"]:
             raise Exception("This endpoint only supports P2SH and P2WSH multisig spending addresses")
         is_segwit_tx = send_address_script_type == "P2WSH"
+
+        if not public_keys or not quorum:
+            raise Exception("Must provide public keys and quorum for redeem script construction")
+
+        if send_address_script_type == "P2SH":
+            redeem_script = construct_p2sh_address_redeem_script(public_keys, quorum)
+        else:
+            raise Exception("P2WSH not yet implemented")
+
+        if redeem_script.address(BITCOIN_NETWORK) != send_address:
+            raise Exception(f"Reconstructed multisig address does not match provided send address: {redeem_script.address(BITCOIN_NETWORK)} != {send_address}")
 
         sending_address_utxos = blockstream.addr_get_address_utxo(send_address)
         sending_amount_sats = btc_to_sat(send_amount_btc)
@@ -213,13 +234,13 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
 
         signature_hashes = []
         if is_segwit_tx:
-            for i in range(len(unsigned_tx_obj.tx_ins)):
-                # TODO: Add redeemscript
-                signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_bip143(i), 32).hex())
+            raise Exception("P2WSH not yet implemented")
+            # for i in range(len(unsigned_tx_obj.tx_ins)):
+            #     # TODO: Add redeemscript, witness script
+            #     signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_bip143(i), 32).hex())
         else:
             for i in range(len(unsigned_tx_obj.tx_ins)):
-                # TODO: Add redeemscript, witness script
-                signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i), 32).hex())
+                signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
 
         return {"tx_raw": unsigned_tx_obj.serialize().hex(), "sig_hash_list": signature_hashes}
 

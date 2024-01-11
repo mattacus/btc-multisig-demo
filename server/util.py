@@ -56,6 +56,8 @@ def get_address_script_type(address):
                 return "P2WSH"
             else:
                 raise Exception(f"{address} is not a valid bech32 address")
+        else:
+            raise Exception("Only segwit v0 is supported")
     else:
         raise Exception(f"Unsupported address type for address: {address}")
 

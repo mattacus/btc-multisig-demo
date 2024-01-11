@@ -29,7 +29,7 @@ const KeySetupControls = () => {
 
   const createMultisigAddressMutation = useMutation({
     mutationFn: ({ pubKeys, quorum }) =>
-      backendApi.createMultisigAddress(pubKeys, quorum),
+      backendApi.createMultisigAddress(pubKeys, quorum, "p2sh"),
     onSuccess: (data) => {
       multisigKeyDispatch({
         type: "SET_MULTISIG_ADDRESS",

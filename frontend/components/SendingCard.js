@@ -65,11 +65,13 @@ const SendingCard = () => {
 
   const createUnsignedTransactionMutation = useMutation({
     mutationFn: ({ sendAddress, receiveAddress, amount, feeRate }) =>
-      backendApi.createUnsignedTransaction(
+      backendApi.createUnsignedMultisigTransaction(
         sendAddress,
         receiveAddress,
         amount,
-        feeRate
+        feeRate,
+        multisigKeyState.publicKeyList,
+        multisigKeyState.quorum.m
       ),
   });
   const {
