@@ -242,6 +242,14 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
             for i in range(len(unsigned_tx_obj.tx_ins)):
                 signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
 
+        print("REDEEM SCRIPT")
+        print(redeem_script.serialize().hex())
+
+        print("OUTPUT SCRIPT")
+        outputs_serialized = [tx_out.serialize().hex() for tx_out in unsigned_tx_obj.tx_outs]
+        print(unsigned_tx_obj.tx_outs)
+        print("".join(outputs_serialized))
+
         return {"tx_raw": unsigned_tx_obj.serialize().hex(), "sig_hash_list": signature_hashes}
 
     except Exception as e:
