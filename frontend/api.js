@@ -177,6 +177,37 @@ class BackendAPI {
     }
     return response.json();
   }
+
+  async finalizeMultisigTransaction(
+    signatures,
+    transactionData,
+    publicKeys,
+    quorum
+  ) {
+    let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/finalize_transaction`;
+    const response = await fetch(fetchUrl, {
+      method: "POST",
+      headers: {
+        ...this.fetchConfig.headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        signature_data: signatures,
+        transaction_data: transactionData,
+        public_keys: publicKeys,
+        quorum,
+      }),
+    });
+    if (!response.ok) {
+      const responseBody = await response.json();
+      this.defaultErrorHandler(
+        response.status,
+        JSON.stringify(responseBody),
+        "Finalize Multisig Transaction"
+      );
+    }
+    return response.json();
+  }
 }
 
 const backendApi = new BackendAPI();

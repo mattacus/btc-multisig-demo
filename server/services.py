@@ -1,17 +1,19 @@
+import hashlib
 import logging
 
 from flask import jsonify
-from buidl import PrivateKey
+from buidl import PrivateKey, S256Point, Signature
 from buidl.tx import Tx, TxIn, TxOut
 from buidl.script import RedeemScript
-from buidl.helper import int_to_big_endian
+from buidl.helper import int_to_big_endian, big_endian_to_int
 from blockstream_api import blockstream
 from util import (
     get_testnet_funding_private_keys,
     sat_to_btc,
     btc_to_sat,
     select_utxos_lifo,
-    get_address_script_type
+    get_address_script_type,
+    format_signature_der
 )
 from calc_tx_size import calc_tx_size
 from settings import BITCOIN_NETWORK, FEE_BUMP_SATS
@@ -240,10 +242,68 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
             #     signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_bip143(i), 32).hex())
         else:
             for i in range(len(unsigned_tx_obj.tx_ins)):
-                signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
+                # signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
+                signature_hashes.append(hashlib.sha256(unsigned_tx_obj.sig_hash_legacy(i, redeem_script, raw_msg=True)).digest().hex())
 
-        return {"tx_raw": unsigned_tx_obj.serialize().hex(), "sig_hash_list": signature_hashes}
+        print("SIG HASH NEW")
+        print(signature_hashes[0])
+        return {"tx_id": unsigned_tx_obj.id(), "tx_raw": unsigned_tx_obj.serialize().hex(), "sig_hash_list": signature_hashes}
 
     except Exception as e:
         logging.exception(e)
         return jsonify(error=str(e)), 400
+
+
+def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_public_keys, quorum):
+    print(f"Signature data: {signature_data}")
+    print(f"Transaction data: {transaction_data}")
+    tx_obj = Tx.parse_hex(transaction_data)
+    print(tx_obj)
+    pubkey_points = []
+    for key in sec_public_keys.values():
+        print(key)
+        pubkey_points.append(S256Point.parse(bytes.fromhex(key)))
+
+    tx_in = tx_obj.tx_ins[0]
+    print(tx_in)
+
+    # if not sec_public_keys or not quorum:
+    #         raise Exception("Must provide public keys and quorum for redeem script construction")
+
+    #    if send_address_script_type == "P2SH":
+    redeem_script = construct_p2sh_address_redeem_script(sec_public_keys, quorum)
+    print(redeem_script)
+    sig_hash = tx_obj.sig_hash_legacy(0, redeem_script)
+    # sig_hash = big_endian_to_int(bytes.fromhex("95d22aed5d41fe149bc26356a0774afcb4afdcdcefb466da3fee5b4435bcea55"))
+    #    else:
+    #         raise Exception("P2WSH not yet implemented")
+
+    # for pk in pubkey_points:
+    #     print(pk.sec(compressed=False).hex())
+
+    # TODO: Handle multi input transactions
+    TX_INPUT_INDEX = 0
+
+    der_signatures = []
+    for sig in signature_data.values():
+        if not sig["r"] or not sig["s"]:
+            raise Exception("Invalid signature: Must provide both r and s values for signature")
+        der_signatures.append(format_signature_der(sig["r"], sig["s"]))
+
+    for i, point in enumerate(pubkey_points):
+        signature = Signature.parse(der_signatures[i])
+        print(f"Using pubkey: {pubkey_points[i].sec(compressed=False).hex()}")
+        logging.info(f"Checking signature: {signature}")
+
+        print(hex(sig_hash))
+        valid = point.verify(sig_hash, signature)
+        check_sig = tx_obj.check_sig_legacy(
+            TX_INPUT_INDEX,
+            point,
+            signature,
+            redeem_script=redeem_script,
+        )
+        print(valid)
+        print(check_sig)
+
+    pass

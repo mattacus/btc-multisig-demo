@@ -10,10 +10,15 @@ import {
   TextField,
   FormControlLabel,
   Switch,
+  Alert,
+  AlertTitle,
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import backendApi from "../api";
-import { useMultisigContext } from "../MultisigContext";
+import {
+  useMultisigContext,
+  useMultisigDispatchContext,
+} from "../MultisigContext";
 import { DEFAULT_SENDING_AMOUNT_BTC } from "../const";
 import AddressInfoBox from "./shared/AddressInfoBox";
 import TransactionInfoBox from "./shared/TransactionInfoBox";
@@ -23,6 +28,7 @@ import { getFeeRatesRange } from "../util";
 
 const SendingCard = () => {
   const multisigContext = useMultisigContext();
+  const multisigDispatch = useMultisigDispatchContext();
 
   const [sendingAddress, setSendingAddress] = React.useState("");
   const [sendingAmount, setSendingAmount] = React.useState(
@@ -52,7 +58,9 @@ const SendingCard = () => {
 
   const isTransactionCreationEnabled =
     sendingAddress && addressInfo && sendingAmount > 0 && receivingAddress;
-  const isSendingEnabled = false;
+  const isSendingEnabled =
+    multisigContext.currentMultisigTransaction &&
+    Object.keys(multisigContext.signatures).length >= multisigContext.quorum.m;
 
   const {
     data: feeEstimates,
@@ -73,7 +81,28 @@ const SendingCard = () => {
         multisigContext.publicKeyList,
         multisigContext.quorum.m
       ),
+    onSuccess: (data) => {
+      multisigDispatch({
+        type: "SET_PENDING_TRANSACTION",
+        payload: data["tx_raw"],
+      });
+      multisigDispatch({
+        type: "SET_SIG_HASH_LIST",
+        payload: data["sig_hash_list"],
+      });
+    },
   });
+
+  const finalizeMultisigTransactionMutation = useMutation({
+    mutationFn: ({ signatures, transactionData }) =>
+      backendApi.finalizeMultisigTransaction(
+        signatures,
+        transactionData,
+        multisigContext.publicKeyList,
+        multisigContext.quorum.m
+      ),
+  });
+
   const {
     data: unsignedTransactionData,
     isError: isErrorCreateUnsignedTransaction,
@@ -94,8 +123,6 @@ const SendingCard = () => {
 
     return errors;
   };
-
-  console.log(unsignedTransactionData);
 
   return (
     <>
@@ -170,9 +197,14 @@ const SendingCard = () => {
                 size="small"
                 variant="contained"
                 disabled={!isSendingEnabled}
-                onClick={() => {}}
+                onClick={() => {
+                  finalizeMultisigTransactionMutation.mutate({
+                    signatures: multisigContext.signatures,
+                    transactionData: multisigContext.currentMultisigTransaction,
+                  });
+                }}
               >
-                Send From Multisig Address
+                Finalize Multisig Transaction
               </Button>
               <FormControlLabel
                 control={
@@ -186,6 +218,9 @@ const SendingCard = () => {
               />
             </Grid>
             <Grid sx={{ mt: -8 }}>
+              {unsignedTransactionData && (
+                <Alert severity="info">Unsigned Transaction Created</Alert>
+              )}
               {/* {isSuccessCreateFundingTransaction && fundingTransactionData && (
                 <TransactionInfoBox
                   setParentSnackbarStatus={setSnackbarStatus}

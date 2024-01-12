@@ -5,6 +5,7 @@ from services import (
     create_p2sh_address_details,
     send_testnet_payment_from_funding_address,
     create_unsigned_transaction_multisig,
+    finalize_signed_multisig_transaction,
 )
 from blockstream_api import blockstream
 
@@ -76,3 +77,16 @@ def create_unsigned_multisig_transaction():
         public_keys=pubkeys,
         quorum=quorum,
     )
+
+
+@api.route("multisig/finalize_transaction", methods=["POST"])
+def finalize_transaction():
+    data = request.get_json()
+    signature_data = data.get("signature_data")
+    transaction_data = data.get("transaction_data")
+    sec_public_keys = data.get("public_keys")
+    quorum = data.get("quorum")
+    finalize_signed_multisig_transaction(
+        signature_data, transaction_data, sec_public_keys, quorum
+    )
+    return jsonify(error=str("Not yet implemented")), 400

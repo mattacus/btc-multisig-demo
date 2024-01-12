@@ -10,6 +10,8 @@ const initialState = {
     n: 2,
   },
   multisigAddress: null,
+  currentMultisigTransaction: null,
+  sigHashList: null,
   signatures: {},
 };
 
@@ -22,8 +24,22 @@ const initialStateTEST = {
     m: 2,
     n: 2,
   },
-  multisigAddress: null,
-  signatures: {},
+  multisigAddress: "2NETKqDTQ7BcZQ1JbZfweYfjg5cJArKj91g",
+  currentMultisigTransaction:
+    "0100000001758428e84f5e4322a92b51a1cfcc14cf59208cb10f485092aa2324a9d05082ef0000000000ffffffff0288130000000000001976a91484f8e08b00d6bb2cc2f419ea6bd598b68dcbced088acb91200000000000017a914e8a482d30c69fb395152ad5c467a59ffb754bbae8700000000",
+  sigHashList: [
+    "f03a72ff8bb657e023817857d82a6a3dea9e37b7bffbf4be4e499d4ff8b6bf9a",
+  ],
+  signatures: {
+    // 0: {
+    //   r: "4ec12e720bd10f4bf7d164963f1919378e98495ede138b5f16eb93ae08db3f5d",
+    //   s: "7b20d5e6127b170784dfde78b778f43dc01477e423489a8489c4e9cd9a010d09",
+    // },
+    // 1: {
+    //   r: "69eb5fca47edfb203831cca99ad807273d7173728e3a92409d412313074e291e",
+    //   s: "57b9ca1785eea1c4532c55a3ba5f6f33aa4a1afc266e88dee2db126b275f10f1",
+    // },
+  },
 };
 
 const reducer = (state, action) => {
@@ -56,6 +72,16 @@ const reducer = (state, action) => {
           ...state.signatures,
           [action.payload.keyIndex]: action.payload.value,
         },
+      };
+    case "SET_PENDING_TRANSACTION":
+      return {
+        ...state,
+        currentMultisigTransaction: action.payload,
+      };
+    case "SET_SIG_HASH_LIST":
+      return {
+        ...state,
+        sigHashList: action.payload,
       };
     default:
       return state;

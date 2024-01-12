@@ -88,3 +88,30 @@ def select_utxos_lifo(utxos, transaction_total_sats):
             )
         )
     return selected_utxos
+
+
+def format_signature_der(r, s):
+    """
+    Convert an (r, s) signature into DER format
+    """
+    # Convert each from hex string to int
+    r_int = int(r, 16)
+    s_int = int(s, 16)
+    rbin = r_int.to_bytes(32, "big")
+    # remove null bytes at the beginning
+    rbin = rbin.lstrip(b"\x00")
+    # if rbin has a high bit, add a null byte
+    if rbin[0] & 0x80:
+        rbin = b"\x00" + rbin
+    # Marker (0x02) + length of r value + r value
+    result = bytes([2, len(rbin)]) + rbin
+    sbin = s_int.to_bytes(32, "big")
+    # remove null bytes at the beginning
+    sbin = sbin.lstrip(b"\x00")
+    # if sbin has a high bit, add a null byte
+    if sbin[0] & 0x80:
+        sbin = b"\x00" + sbin
+    # Marker (0x02) + length of s value + s value
+    result += bytes([2, len(sbin)]) + sbin
+    # Marker (0x30) + length of signature data + signature data
+    return bytes([0x30, len(result)]) + result
