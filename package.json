@@ -6,8 +6,7 @@
   "description": "",
   "scripts": {
     "start": "parcel frontend/index.html --port=3000",
-    "start-wallet": "parcel wallet/index.html --dist-dir distwallet --port=3001",
-    "build": "parcel build frontend/index.html"
+    "start-wallet": "parcel wallet/index.html --dist-dir distwallet --port=3001"
   },
   "targets": {
     "default": {
@@ -16,6 +15,7 @@
   },
   "license": "ISC",
   "dependencies": {
+    "@bitcoinerlab/secp256k1": "^1.0.5",
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.15.3",
@@ -23,11 +23,14 @@
     "@tanstack/react-query": "^5.17.1",
     "bitcoinjs-lib": "^6.1.5",
     "core-js": "^3.35.0",
+    "ecpair": "^2.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.0",
+    "events": "^3.3.0",
     "parcel": "^2.10.3",
     "path-browserify": "^1.0.1",
     "process": "^0.11.10",

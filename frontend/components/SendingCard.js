@@ -58,9 +58,7 @@ const SendingCard = () => {
 
   const isTransactionCreationEnabled =
     sendingAddress && addressInfo && sendingAmount > 0 && receivingAddress;
-  const isSendingEnabled =
-    multisigContext.currentMultisigTransaction &&
-    Object.keys(multisigContext.signatures).length >= multisigContext.quorum.m;
+  const isSendingEnabled = true;
 
   const {
     data: feeEstimates,

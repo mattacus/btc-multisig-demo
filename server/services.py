@@ -273,8 +273,8 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
     #    if send_address_script_type == "P2SH":
     redeem_script = construct_p2sh_address_redeem_script(sec_public_keys, quorum)
     print(redeem_script)
-    sig_hash = tx_obj.sig_hash_legacy(0, redeem_script)
-    # sig_hash = big_endian_to_int(bytes.fromhex("95d22aed5d41fe149bc26356a0774afcb4afdcdcefb466da3fee5b4435bcea55"))
+    # sig_hash = tx_obj.sig_hash_legacy(0, redeem_script)
+    sig_hash = big_endian_to_int(bytes.fromhex("47b3f13485211cd8ac866381ad3912b47c6797047a17ddd76885615d5030004d"))
     #    else:
     #         raise Exception("P2WSH not yet implemented")
 
