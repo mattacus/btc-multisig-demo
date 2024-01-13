@@ -1,7 +1,5 @@
 import * as React from "react";
-import { listen } from "@ledgerhq/logs";
-import Btc from "@ledgerhq/hw-app-btc";
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
+
 import {
   Grid,
   Card,
@@ -35,36 +33,16 @@ const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
   const multisigDispatch = useMultisigDispatchContext();
 
   const [error, setError] = React.useState(null);
-  const [keyDerivationPath, setKeyDerivationPath] = React.useState(
-    DEFAULTS.bip32Path[BITCOIN_NETWORK] + "/" + keyIndex
-  );
 
   const connectAndSignTransaction = async () => {
     try {
-      const transport = await TransportWebUSB.create();
-      const currency =
-        BITCOIN_NETWORK === "mainnet" ? "bitcoin" : "bitcoin_testnet";
-
-      //listen to the events which are sent by the Ledger packages in order to debug the app
-      // listen((log) => console.log(log));
-
-      const btc = new Btc({ transport, currency: currency });
-
-      console.log(Buffer.from(multisigContext.sigHashList[0]).toString("hex"));
-
-      const { r, s } = await btc.signMessage(
-        keyDerivationPath,
-        // multisigContext.sigHashList[0]
-        "f03a72ff8bb657e023817857d82a6a3dea9e37b7bffbf4be4e499d4ff8b6bf9a"
-      );
-
-      multisigDispatch({
-        type: "ADD_SIGNATURE",
-        payload: {
-          keyIndex,
-          value: { r, s },
-        },
-      });
+      // multisigDispatch({
+      //   type: "ADD_SIGNATURE",
+      //   payload: {
+      //     keyIndex,
+      //     value: { r, s },
+      //   },
+      // });
     } catch (e) {
       //Catch any error thrown and displays it on the screen
       setError(String(e.message || e));
@@ -91,22 +69,6 @@ const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
                 {name}
               </Typography>
               <Grid container direction={"column"} spacing={1}>
-                <Grid>
-                  <TextField
-                    required
-                    label="Key Derivation Path"
-                    type="string"
-                    sx={{ mt: 2, minWidth: 250 }}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    variant="standard"
-                    value={keyDerivationPath}
-                    onChange={(e) => {
-                      setKeyDerivationPath(e.target.value);
-                    }}
-                  />
-                </Grid>
                 <Grid>
                   <>
                     {multisigContext.signatures[keyIndex] && (
