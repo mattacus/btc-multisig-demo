@@ -167,6 +167,7 @@ cython_debug/
 .parcel-cache
 .dist/
 dist/
+distwallet/
 .env
 /src/data/
 /src/img/
