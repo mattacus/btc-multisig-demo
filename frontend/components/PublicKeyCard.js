@@ -56,7 +56,7 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
               <Grid container direction={"column"} spacing={1}>
                 <Grid>
                   <TextField
-                    label="Signature Data"
+                    label="Uncompressed Public Key Format"
                     type="string"
                     spellCheck={false}
                     multiline

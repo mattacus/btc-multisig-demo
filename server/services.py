@@ -58,7 +58,7 @@ def construct_p2sh_address_redeem_script(pubkeys, quorum):
     """
 
     if len(pubkeys) < 2:
-        raise ValueError("Must provide at least two public keys")
+        raise ValueError("Must provide at least two public keys as a list")
 
     return RedeemScript.create_p2sh_multisig(
         quorum_m=quorum,
@@ -92,6 +92,7 @@ def send_testnet_payment_from_funding_address(
     Only supports P2PKH and P2WPKH addresses
     """
     try:
+        logging.info("*************** CREATING TESTNET FUNDING TX ***************")
         funding_keys = get_testnet_funding_private_keys()
         funding_private_key = None
         funding_address_type = get_address_script_type(funding_address)
@@ -178,6 +179,7 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
     Return the raw transaction object as well as the signature hashes for signing on the frontend with a hardware wallet
     """
     try:
+        logging.info("*************** CREATING UNSIGNED MULTISIG TX ***************")
         send_address_script_type = get_address_script_type(send_address)
         receive_address_script_type = get_address_script_type(receive_address)
         if send_address_script_type not in ["P2SH", "P2WSH"]:
@@ -195,12 +197,17 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
         if redeem_script.address(BITCOIN_NETWORK) != send_address:
             raise Exception(f"Reconstructed multisig address does not match provided send address: {redeem_script.address(BITCOIN_NETWORK)} != {send_address}")
 
+        logging.info(f"Redeem script: {redeem_script}")
+
         sending_address_utxos = blockstream.addr_get_address_utxo(send_address)
         sending_amount_sats = btc_to_sat(send_amount_btc)
         spending_utxos = select_utxos_lifo(
             sending_address_utxos, sending_amount_sats
         )
         logging.info(f"Selected spending UTXOs: {spending_utxos}")
+        if len(spending_utxos) > 1:
+            raise Exception("Only single UTXO signing currently supported")
+
         available_spending_amount_sats = sum([utxo["value"] for utxo in spending_utxos])
 
         # Get TX Size Upper Bound
@@ -209,6 +216,8 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
             input_count=len(spending_utxos),
             p2pkh_output_count=(1 if receive_address_script_type == "P2PKH" else 0),
             p2wpkh_output_count=(1 if receive_address_script_type == "P2WPKH" else 0),
+            p2sh_output_count=(1 if receive_address_script_type == "P2SH" else 0),
+            p2wsh_output_count=(1 if receive_address_script_type == "P2WSH" else 0)
         )
         tx_size = tx_size_stats["tx_vbytes"]
         logging.info(f"Calculated transaction size upper bound: {tx_size} vbytes")
@@ -236,17 +245,12 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
         signature_hashes = []
         if is_segwit_tx:
             raise Exception("P2WSH not yet implemented")
-            # for i in range(len(unsigned_tx_obj.tx_ins)):
-            #     # TODO: Add redeemscript, witness script
-            #     signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_bip143(i), 32).hex())
         else:
             for i in range(len(unsigned_tx_obj.tx_ins)):
                 signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
 
-        print("SIG HASH NEW")
-        print(signature_hashes[0])
-        print("REDEEM SCRIPT")
-        print(redeem_script)
+        logging.info(f"Input SigHashes: {signature_hashes}")
+
         return {"tx_id": unsigned_tx_obj.id(), "tx_raw": unsigned_tx_obj.serialize().hex(),
                 "redeem_script": redeem_script.raw_serialize().hex(), "signature_hashes": signature_hashes}
 
@@ -256,82 +260,76 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
 
 
 def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_public_keys, redeem_script_hex, publish=False):
-    print(f"Signature data: {signature_data}")
-    print(f"Public keys: {sec_public_keys}")
-    print(f"Transaction data: {transaction_data}")
-    tx_obj = Tx.parse_hex(transaction_data)
-    print(tx_obj)
-    pubkey_points = []
-    for i in range(len(sec_public_keys.values())):
-        key = sec_public_keys[str(i)]
-        pubkey_points.append(S256Point.parse(bytes.fromhex(key)))
+    try:
+        REVERSE_KEY_SIG_ORDERING = True
+        logging.info("*************** FINALIZING MULTISIG TX ***************")
+        logging.info(f"Input signature data: {signature_data}")
+        logging.info(f"Input public keys: {sec_public_keys}")
+        tx_obj = Tx.parse_hex(transaction_data)
+        pubkey_points = []
+        for i in range(len(sec_public_keys.values())):
+            key = sec_public_keys[str(i)]
+            pubkey_points.append(S256Point.parse(bytes.fromhex(key)))
 
-    print(f"Pubkey points: {pubkey_points}")
+        tx_in = tx_obj.tx_ins[0]
 
-    tx_in = tx_obj.tx_ins[0]
-    print(tx_in)
+        # TODO: Handle P2WSH
+        redeem_script = RedeemScript.parse(raw=bytes.fromhex(redeem_script_hex))
 
-    # if not sec_public_keys or not quorum:
-    #         raise Exception("Must provide public keys and quorum for redeem script construction")
+        logging.info(f"Redeem script: {redeem_script}")
+        sig_hash = tx_obj.sig_hash_legacy(0, redeem_script)
+        logging.info(f"Signature hash script: {hex(sig_hash)}")
 
-    #    if send_address_script_type == "P2SH":
-    redeem_script = RedeemScript.parse(raw=bytes.fromhex(redeem_script_hex))
-    print("REDEEM SCRIPT: ")
-    print(redeem_script)
-    sig_hash = tx_obj.sig_hash_legacy(0, redeem_script)
-    print("SIG HASH: ")
-    print(hex(sig_hash))
-    # sig_hash = big_endian_to_int(bytes.fromhex("47b3f13485211cd8ac866381ad3912b47c6797047a17ddd76885615d5030004d"))
-    #    else:
-    #         raise Exception("P2WSH not yet implemented")
+        # TODO: Handle multi input transactions
+        TX_INPUT_INDEX = 0
 
-    # for pk in pubkey_points:
-    #     print(pk.sec(compressed=False).hex())
+        der_signatures = []
+        for i in range(len(signature_data.values())):
+            sig = signature_data[str(i)]
+            if not sig["r"] or not sig["s"]:
+                raise Exception("Invalid signature: Must provide both r and s values for signature")
+            der_signatures.append(Signature.parse(format_signature_der(sig["r"], sig["s"])))
 
-    # TODO: Handle multi input transactions
-    TX_INPUT_INDEX = 0
+        # reverse pubkeys to match order of redeem script
+        if REVERSE_KEY_SIG_ORDERING:
+            pubkey_points = pubkey_points[::-1]
 
-    der_signatures = []
-    for i in range(len(signature_data.values())):
-        sig = signature_data[str(i)]
-        if not sig["r"] or not sig["s"]:
-            raise Exception("Invalid signature: Must provide both r and s values for signature")
-        der_signatures.append(Signature.parse(format_signature_der(sig["r"], sig["s"])))
+        for i, point in enumerate(pubkey_points):
+            signature = der_signatures[i]
+            logging.info(f"Using pubkey: {point.sec(compressed=False).hex()}")
+            logging.info(f"Checking signature: {signature}")
 
-    print(f"DER SIGNATURES: {der_signatures}")
-    pubkey_points = pubkey_points[::-1]
+            valid = point.verify(sig_hash, signature)
+            logging.info(f"Signature {i} verified : {valid}")
+            check_sig = tx_obj.check_sig_legacy(
+                TX_INPUT_INDEX,
+                point,
+                signature,
+                redeem_script=redeem_script,
+            )
+            logging.info(f"Signature {i} transaction check : {check_sig}")
 
-    for i, point in enumerate(pubkey_points):
-        signature = der_signatures[i]
-        print(f"Using pubkey: {point.sec(compressed=False).hex()}")
-        logging.info(f"Checking signature: {signature}")
+        # finalize signatures
+        sighash_byte = int_to_byte(SIGHASH_ALL)
+        # reverse order when adding signatures to match order of redeem script
+        final_signatures = [sig.der() + sighash_byte for sig in der_signatures[::-1]]
+        tx_in.finalize_p2sh_multisig(final_signatures, redeem_script)
 
-        valid = point.verify(sig_hash, signature)
-        check_sig = tx_obj.check_sig_legacy(
-            TX_INPUT_INDEX,
-            point,
-            signature,
-            redeem_script=redeem_script,
-        )
-        print(valid)
-        print(check_sig)
+        logging.info(f"TX Details: {tx_obj}")
 
-    # finalize signatures
-    sighash_byte = int_to_byte(SIGHASH_ALL)
-    tx_in.finalize_p2sh_multisig([der_signatures[1].der() + sighash_byte, der_signatures[0].der() + sighash_byte], redeem_script)
-    print("scriptsig: ", tx_in.script_sig)
-
-    print("\nTX Details: ", tx_obj)
-
-    if publish:
-        tx_raw = tx_obj.serialize().hex()
-        logging.info(f"Publishing transaction: {tx_raw}")
-        response = blockstream.tx_post_tx(tx_raw)
-        if response and response.status_code == 200:
-            logging.info("Transaction published successfully!")
-            return {"tx_id": tx_obj.id(), "status": "success"}
+        if publish:
+            tx_raw = tx_obj.serialize().hex()
+            logging.info(f"Publishing transaction: {tx_raw}")
+            response = blockstream.tx_post_tx(tx_raw)
+            if response and response.status_code == 200:
+                logging.info("Transaction published successfully!")
+                return {"tx_id": tx_obj.id(), "status": "success"}
+            else:
+                logging.error("Error publishing transaction")
+                return jsonify(error="Error publishing transaction"), 400
         else:
-            logging.error("Error publishing transaction")
-            return jsonify(error="Error publishing transaction"), 400
-    else:
-        return {"tx_id": tx_obj.id(), "status": "debug"}
+            return {"tx_id": tx_obj.id(), "status": "debug"}
+
+    except Exception as e:
+        logging.exception(e)
+        return jsonify(error=str(e)), 400

@@ -1,4 +1,4 @@
-export const DEFAULT_FUNDING_AMOUNT_BTC = 0.001;
+export const DEFAULT_FUNDING_AMOUNT_BTC = 0.0001;
 export const DEFAULT_SENDING_AMOUNT_BTC = 0.00005;
 export const MIN_KEYS = 2;
 export const MAX_KEYS = 10;
