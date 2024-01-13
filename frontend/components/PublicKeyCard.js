@@ -8,7 +8,6 @@ import {
   Button,
   TextField,
   Alert,
-  AlertTitle,
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import {
@@ -16,28 +15,24 @@ import {
   useMultisigDispatchContext,
 } from "../MultisigContext";
 
-const DEFAULTS = {
-  deviceFormat: "legacy",
-  bip32Path: {
-    mainnet: "44'/0'/0'/0",
-    testnet: "44'/1'/0'/0",
-  },
-};
-
 const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
   const multisigContext = useMultisigContext();
   const multisigDispatch = useMultisigDispatchContext();
 
   const [error, setError] = React.useState(null);
+  const [pubKeyData, setPubKeyData] = React.useState(
+    multisigContext.publicKeyList[keyIndex] ?? ""
+  );
 
-  const pubKey = multisigContext.publicKeyList[keyIndex];
-
-  const connectAndGetAddress = async () => {
+  const setPubkey = () => {
     try {
-      // multisigDispatch({
-      //   type: "ADD_PUBLIC_KEY",
-      //   payload: { keyIndex: keyIndex, value: publicKey },
-      // });
+      multisigDispatch({
+        type: "SET_PUBLIC_KEY",
+        payload: {
+          keyIndex,
+          value: pubKeyData,
+        },
+      });
     } catch (e) {
       //Catch any error thrown and displays it on the screen
       setError(String(e.message || e));
@@ -60,10 +55,23 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
               </Typography>
               <Grid container direction={"column"} spacing={1}>
                 <Grid>
-                  {pubKey && (
-                    <Alert severity="info" sx={{ overflowWrap: "anywhere" }}>
-                      <AlertTitle>Public Key:</AlertTitle>
-                      <p>{pubKey}</p>
+                  <TextField
+                    label="Signature Data"
+                    type="string"
+                    spellCheck={false}
+                    multiline
+                    sx={{ minWidth: 250 }}
+                    variant="standard"
+                    value={pubKeyData}
+                    onChange={(e) => {
+                      setPubKeyData(e.target.value ?? "");
+                    }}
+                  />
+                </Grid>
+                <Grid>
+                  {multisigContext.publicKeyList[keyIndex] && (
+                    <Alert severity="success" sx={{ overflowWrap: "anywhere" }}>
+                      Public Key Successfully Imported
                     </Alert>
                   )}
                 </Grid>
@@ -77,10 +85,10 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
                 variant="outlined"
                 onClick={() => {
                   setError(null);
-                  connectAndGetAddress();
+                  setPubkey();
                 }}
               >
-                Get Public Key
+                Import Public Key
               </Button>
             </CardActions>
           </Grid>

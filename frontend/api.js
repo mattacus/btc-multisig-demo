@@ -182,7 +182,8 @@ class BackendAPI {
     signatures,
     transactionData,
     publicKeys,
-    redeemScript
+    redeemScript,
+    publish
   ) {
     let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/finalize_transaction`;
     const response = await fetch(fetchUrl, {
@@ -196,6 +197,7 @@ class BackendAPI {
         transaction_data: transactionData,
         public_keys: publicKeys,
         redeem_script: redeemScript,
+        publish: publish.toString(),
       }),
     });
     if (!response.ok) {

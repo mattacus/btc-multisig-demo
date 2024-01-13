@@ -21,9 +21,14 @@ const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
   const multisigDispatch = useMultisigDispatchContext();
 
   const [error, setError] = React.useState(null);
-  const [signatureData, setSignatureData] = React.useState("");
+  const [signatureData, setSignatureData] = React.useState(
+    multisigContext.signatures[keyIndex]
+      ? multisigContext.signatures[keyIndex].r +
+          multisigContext.signatures[keyIndex].s
+      : ""
+  );
 
-  const applySignature = async () => {
+  const applySignature = () => {
     try {
       multisigDispatch({
         type: "ADD_SIGNATURE",
@@ -73,6 +78,13 @@ const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
                     }}
                   />
                 </Grid>
+                <Grid>
+                  {multisigContext.signatures[keyIndex] && (
+                    <Alert severity="success" sx={{ overflowWrap: "anywhere" }}>
+                      Signature Successfully Recorded
+                    </Alert>
+                  )}
+                </Grid>
               </Grid>
             </CardContent>
           </Grid>
@@ -87,7 +99,7 @@ const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
                   applySignature();
                 }}
               >
-                Apply Signature
+                Record Signature
               </Button>
             </CardActions>
           </Grid>

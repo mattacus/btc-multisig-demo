@@ -26,27 +26,15 @@ const initialStateTEST = {
     n: 2,
   },
   multisigAddress: "2N3rukjFGt3dj2bJEAbzJ8DJQZd8moRAf8w",
-  currentMultisigTransaction:
-    "0100000001fccb18bde8ae85b74e139c6d41a22238cc2f9a97e53b182a8fd88d473e512d4f0000000000ffffffff0288130000000000001976a91484f8e08b00d6bb2cc2f419ea6bd598b68dcbced088acb91200000000000017a91474710300fb1291ba7c89d9545dfee3981dd5ceb98700000000",
+  currentMultisigTransaction: null,
   redeemScript: null,
-  sigHashList: [
-    "47b3f13485211cd8ac866381ad3912b47c6797047a17ddd76885615d5030004d",
-  ],
-  signatures: {
-    0: {
-      r: "70eb985fccc1159e22c95106f38d4cd23fd374b6a288c2323b1b38f47addb767",
-      s: "3c624fde823df447c627a26b3b6532f7e796b5fc6a24f5565e1484f871c7d04f",
-    },
-    1: {
-      r: "8e5d6567a354bcf2b784cf652e3ef4c49e9e3acc877236be6aba04ae7669624a",
-      s: "4ecc74bb2b345517443134e8208b5ba50a95e9b3771076324c53ceea579b8708",
-    },
-  },
+  sigHashList: [],
+  signatures: {},
 };
 
 const reducer = (state, action) => {
   switch (action.type) {
-    case "ADD_PUBLIC_KEY":
+    case "SET_PUBLIC_KEY":
       return {
         ...state,
         publicKeyList: {

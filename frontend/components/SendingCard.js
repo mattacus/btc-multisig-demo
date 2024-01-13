@@ -12,6 +12,7 @@ import {
   Switch,
   Alert,
   AlertTitle,
+  Snackbar,
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import backendApi from "../api";
@@ -30,6 +31,11 @@ const SendingCard = () => {
   const multisigContext = useMultisigContext();
   const multisigDispatch = useMultisigDispatchContext();
 
+  const [snackbarStatus, setSnackbarStatus] = React.useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [sendingAddress, setSendingAddress] = React.useState("");
   const [sendingAmount, setSendingAmount] = React.useState(
     DEFAULT_SENDING_AMOUNT_BTC
@@ -86,7 +92,7 @@ const SendingCard = () => {
       });
       multisigDispatch({
         type: "SET_SIG_HASH_LIST",
-        payload: data["sig_hash_list"],
+        payload: data["signature_hashes"],
       });
       multisigDispatch({
         type: "SET_REDEEM_SCRIPT",
@@ -101,15 +107,22 @@ const SendingCard = () => {
         signatures,
         transactionData,
         multisigContext.publicKeyList,
-        multisigContext.redeemScript
+        multisigContext.redeemScript,
+        !isDebugTransaction
       ),
   });
 
   const {
-    data: unsignedTransactionData,
     isError: isErrorCreateUnsignedTransaction,
     error: errorCreateUnsignedTransaction,
   } = createUnsignedTransactionMutation;
+
+  const {
+    data: finalizeMultisigTransactionData,
+    isSuccess: isSuccessFinalizeMultisigTransaction,
+    isError: isErrorFinalizeMultisigTransaction,
+    error: errorFinalizeMultisigTransaction,
+  } = finalizeMultisigTransactionMutation;
 
   const getErrors = () => {
     let errors = [];
@@ -122,8 +135,15 @@ const SendingCard = () => {
     if (isErrorCreateUnsignedTransaction) {
       errors.push(errorCreateUnsignedTransaction);
     }
+    if (isErrorFinalizeMultisigTransaction) {
+      errors.push(errorFinalizeMultisigTransaction);
+    }
 
     return errors;
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarStatus({ ...snackbarStatus, open: false });
   };
 
   return (
@@ -160,22 +180,42 @@ const SendingCard = () => {
                   feeMax={getFeeRatesRange(feeEstimates).max}
                 />
               </Grid>
-              <Grid sx={{ ml: -1 }}>
-                <Button
-                  size="small"
-                  variant="contained"
-                  disabled={!isTransactionCreationEnabled}
-                  onClick={() => {
-                    createUnsignedTransactionMutation.mutate({
-                      sendAddress: sendingAddress,
-                      receiveAddress: receivingAddress,
-                      amount: sendingAmount,
-                      feeRate: feeRate,
-                    });
-                  }}
-                >
-                  Create Transaction for Signing
-                </Button>
+              <Grid
+                container
+                justifyContent="space-between"
+                spacing={2}
+                sx={{ mb: 2 }}
+              >
+                <Grid sx={{ ml: -1 }}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={!isTransactionCreationEnabled}
+                    onClick={() => {
+                      createUnsignedTransactionMutation.mutate({
+                        sendAddress: sendingAddress,
+                        receiveAddress: receivingAddress,
+                        amount: sendingAmount,
+                        feeRate: feeRate,
+                      });
+                    }}
+                  >
+                    Create Transaction for Signing
+                  </Button>
+                </Grid>
+                <Grid>
+                  {multisigContext.sigHashList.length > 0 && (
+                    <Alert
+                      severity="info"
+                      sx={{ maxWidth: 400, overflowWrap: "anywhere" }}
+                    >
+                      <AlertTitle>Unsigned Transaction Created</AlertTitle>
+                      Transaction Hash for Signing:
+                      <br />
+                      {multisigContext.sigHashList[0]}
+                    </Alert>
+                  )}
+                </Grid>
               </Grid>
             </Grid>
             <Grid container direction={"column"} spacing={1}>
@@ -220,15 +260,13 @@ const SendingCard = () => {
               />
             </Grid>
             <Grid sx={{ mt: -8 }}>
-              {unsignedTransactionData && (
-                <Alert severity="info">Unsigned Transaction Created</Alert>
-              )}
-              {/* {isSuccessCreateFundingTransaction && fundingTransactionData && (
-                <TransactionInfoBox
-                  setParentSnackbarStatus={setSnackbarStatus}
-                  transactionID={fundingTransactionData.tx_id}
-                />
-              )} */}
+              {isSuccessFinalizeMultisigTransaction &&
+                finalizeMultisigTransactionData && (
+                  <TransactionInfoBox
+                    setParentSnackbarStatus={setSnackbarStatus}
+                    transactionID={finalizeMultisigTransactionData.tx_id}
+                  />
+                )}
             </Grid>
           </Grid>
         </CardActions>
@@ -240,6 +278,19 @@ const SendingCard = () => {
       ) : (
         <p />
       )}
+      <Snackbar
+        open={snackbarStatus.open}
+        autoHideDuration={5000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarStatus.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarStatus.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

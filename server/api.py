@@ -86,6 +86,13 @@ def finalize_transaction():
     transaction_data = data.get("transaction_data")
     sec_public_keys = data.get("public_keys")
     redeem_script_hex = data.get("redeem_script")
+    publish = data.get(
+        "publish"
+    )  # use for debugging transactions without publishing to the network
     return finalize_signed_multisig_transaction(
-        signature_data, transaction_data, sec_public_keys, redeem_script_hex
+        signature_data,
+        transaction_data,
+        sec_public_keys,
+        redeem_script_hex,
+        publish.lower() == "true",
     )

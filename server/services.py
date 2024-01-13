@@ -72,7 +72,7 @@ def create_p2sh_address_details(pubkeys, quorum):
     Given a list of public keys, create a P2SH address and return it as well as the redeem script
     """
     try:
-        redeem_script = construct_p2sh_address_redeem_script(pubkeys, quorum)
+        redeem_script = construct_p2sh_address_redeem_script(pubkeys.values(), quorum)
 
         return {
             "address": redeem_script.address(BITCOIN_NETWORK),
@@ -255,7 +255,7 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
         return jsonify(error=str(e)), 400
 
 
-def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_public_keys, redeem_script_hex):
+def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_public_keys, redeem_script_hex, publish=False):
     print(f"Signature data: {signature_data}")
     print(f"Public keys: {sec_public_keys}")
     print(f"Transaction data: {transaction_data}")
@@ -323,7 +323,6 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
 
     print("\nTX Details: ", tx_obj)
 
-    publish = True
     if publish:
         tx_raw = tx_obj.serialize().hex()
         logging.info(f"Publishing transaction: {tx_raw}")

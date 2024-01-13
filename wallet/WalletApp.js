@@ -4,11 +4,11 @@ import WalletCard from "./WalletCard";
 
 const fakeHardwareKeys = [
   {
-    name: "Hardware Key",
+    name: "Hardware Key Emulator",
     defaultSecret: process.env.WALLET_DEFAULT_SECRET_REACH ?? "",
   },
   {
-    name: "Hardware Key",
+    name: "Hardware Key Emulator",
     defaultSecret: process.env.WALLET_DEFAULT_SECRET_HARVEST ?? "",
   },
 ];
