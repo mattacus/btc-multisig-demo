@@ -12,6 +12,7 @@ const initialState = {
   multisigAddress: null,
   currentMultisigTransaction: null,
   sigHashList: null,
+  redeemScript: null,
   signatures: {},
 };
 
@@ -27,17 +28,18 @@ const initialStateTEST = {
   multisigAddress: "2N3rukjFGt3dj2bJEAbzJ8DJQZd8moRAf8w",
   currentMultisigTransaction:
     "0100000001fccb18bde8ae85b74e139c6d41a22238cc2f9a97e53b182a8fd88d473e512d4f0000000000ffffffff0288130000000000001976a91484f8e08b00d6bb2cc2f419ea6bd598b68dcbced088acb91200000000000017a91474710300fb1291ba7c89d9545dfee3981dd5ceb98700000000",
+  redeemScript: null,
   sigHashList: [
     "47b3f13485211cd8ac866381ad3912b47c6797047a17ddd76885615d5030004d",
   ],
   signatures: {
     0: {
-      r: "116b86cba8b5d0314511cf10ca0dbb6f0b710c0e7c060b161b6eeddfdb5874c0",
-      s: "7a98330b12164c2cc8c15cad447daf75eb389ffd2a288b89d2f37de7379835c1",
+      r: "70eb985fccc1159e22c95106f38d4cd23fd374b6a288c2323b1b38f47addb767",
+      s: "3c624fde823df447c627a26b3b6532f7e796b5fc6a24f5565e1484f871c7d04f",
     },
     1: {
-      r: "bfae752b70cc95c7fb9c0394a0ef1ecc58e862e2a53ff09050b86e2e6ef79d40",
-      s: "404affc376428a4550c9e7167f86bfdde07a3cc8631b3fb5816c770296a53b72",
+      r: "8e5d6567a354bcf2b784cf652e3ef4c49e9e3acc877236be6aba04ae7669624a",
+      s: "4ecc74bb2b345517443134e8208b5ba50a95e9b3771076324c53ceea579b8708",
     },
   },
 };
@@ -77,6 +79,11 @@ const reducer = (state, action) => {
       return {
         ...state,
         currentMultisigTransaction: action.payload,
+      };
+    case "SET_REDEEM_SCRIPT":
+      return {
+        ...state,
+        redeemScript: action.payload,
       };
     case "SET_SIG_HASH_LIST":
       return {

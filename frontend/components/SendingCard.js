@@ -88,6 +88,10 @@ const SendingCard = () => {
         type: "SET_SIG_HASH_LIST",
         payload: data["sig_hash_list"],
       });
+      multisigDispatch({
+        type: "SET_REDEEM_SCRIPT",
+        payload: data["redeem_script"],
+      });
     },
   });
 
@@ -97,7 +101,7 @@ const SendingCard = () => {
         signatures,
         transactionData,
         multisigContext.publicKeyList,
-        multisigContext.quorum.m
+        multisigContext.redeemScript
       ),
   });
 

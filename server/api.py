@@ -85,8 +85,7 @@ def finalize_transaction():
     signature_data = data.get("signature_data")
     transaction_data = data.get("transaction_data")
     sec_public_keys = data.get("public_keys")
-    quorum = data.get("quorum")
-    finalize_signed_multisig_transaction(
-        signature_data, transaction_data, sec_public_keys, quorum
+    redeem_script_hex = data.get("redeem_script")
+    return finalize_signed_multisig_transaction(
+        signature_data, transaction_data, sec_public_keys, redeem_script_hex
     )
-    return jsonify(error=str("Not yet implemented")), 400

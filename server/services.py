@@ -5,7 +5,7 @@ from flask import jsonify
 from buidl import PrivateKey, S256Point, Signature
 from buidl.tx import Tx, TxIn, TxOut
 from buidl.script import RedeemScript
-from buidl.helper import int_to_big_endian, big_endian_to_int
+from buidl.helper import int_to_big_endian, big_endian_to_int, int_to_byte, SIGHASH_ALL
 from blockstream_api import blockstream
 from util import (
     get_testnet_funding_private_keys,
@@ -56,14 +56,13 @@ def construct_p2sh_address_redeem_script(pubkeys, quorum):
     """
     Reconstruct a Redeem Script from a combination of public keys and a quorum
     """
-    sorted_pubkeys = [pubkeys[i] for i in sorted(pubkeys)]
 
-    if len(sorted_pubkeys) < 2:
+    if len(pubkeys) < 2:
         raise ValueError("Must provide at least two public keys")
 
     return RedeemScript.create_p2sh_multisig(
         quorum_m=quorum,
-        pubkey_hexes=sorted_pubkeys,
+        pubkey_hexes=pubkeys,
         sort_keys=False,
     )
 
@@ -189,7 +188,7 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
             raise Exception("Must provide public keys and quorum for redeem script construction")
 
         if send_address_script_type == "P2SH":
-            redeem_script = construct_p2sh_address_redeem_script(public_keys, quorum)
+            redeem_script = construct_p2sh_address_redeem_script(public_keys.values(), quorum)
         else:
             raise Exception("P2WSH not yet implemented")
 
@@ -242,27 +241,32 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
             #     signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_bip143(i), 32).hex())
         else:
             for i in range(len(unsigned_tx_obj.tx_ins)):
-                # signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
-                signature_hashes.append(hashlib.sha256(unsigned_tx_obj.sig_hash_legacy(i, redeem_script, raw_msg=True)).digest().hex())
+                signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
 
         print("SIG HASH NEW")
         print(signature_hashes[0])
-        return {"tx_id": unsigned_tx_obj.id(), "tx_raw": unsigned_tx_obj.serialize().hex(), "sig_hash_list": signature_hashes}
+        print("REDEEM SCRIPT")
+        print(redeem_script)
+        return {"tx_id": unsigned_tx_obj.id(), "tx_raw": unsigned_tx_obj.serialize().hex(),
+                "redeem_script": redeem_script.raw_serialize().hex(), "signature_hashes": signature_hashes}
 
     except Exception as e:
         logging.exception(e)
         return jsonify(error=str(e)), 400
 
 
-def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_public_keys, quorum):
+def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_public_keys, redeem_script_hex):
     print(f"Signature data: {signature_data}")
+    print(f"Public keys: {sec_public_keys}")
     print(f"Transaction data: {transaction_data}")
     tx_obj = Tx.parse_hex(transaction_data)
     print(tx_obj)
     pubkey_points = []
-    for key in sec_public_keys.values():
-        print(key)
+    for i in range(len(sec_public_keys.values())):
+        key = sec_public_keys[str(i)]
         pubkey_points.append(S256Point.parse(bytes.fromhex(key)))
+
+    print(f"Pubkey points: {pubkey_points}")
 
     tx_in = tx_obj.tx_ins[0]
     print(tx_in)
@@ -271,10 +275,13 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
     #         raise Exception("Must provide public keys and quorum for redeem script construction")
 
     #    if send_address_script_type == "P2SH":
-    redeem_script = construct_p2sh_address_redeem_script(sec_public_keys, quorum)
+    redeem_script = RedeemScript.parse(raw=bytes.fromhex(redeem_script_hex))
+    print("REDEEM SCRIPT: ")
     print(redeem_script)
-    # sig_hash = tx_obj.sig_hash_legacy(0, redeem_script)
-    sig_hash = big_endian_to_int(bytes.fromhex("47b3f13485211cd8ac866381ad3912b47c6797047a17ddd76885615d5030004d"))
+    sig_hash = tx_obj.sig_hash_legacy(0, redeem_script)
+    print("SIG HASH: ")
+    print(hex(sig_hash))
+    # sig_hash = big_endian_to_int(bytes.fromhex("47b3f13485211cd8ac866381ad3912b47c6797047a17ddd76885615d5030004d"))
     #    else:
     #         raise Exception("P2WSH not yet implemented")
 
@@ -285,17 +292,20 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
     TX_INPUT_INDEX = 0
 
     der_signatures = []
-    for sig in signature_data.values():
+    for i in range(len(signature_data.values())):
+        sig = signature_data[str(i)]
         if not sig["r"] or not sig["s"]:
             raise Exception("Invalid signature: Must provide both r and s values for signature")
-        der_signatures.append(format_signature_der(sig["r"], sig["s"]))
+        der_signatures.append(Signature.parse(format_signature_der(sig["r"], sig["s"])))
+
+    print(f"DER SIGNATURES: {der_signatures}")
+    pubkey_points = pubkey_points[::-1]
 
     for i, point in enumerate(pubkey_points):
-        signature = Signature.parse(der_signatures[i])
-        print(f"Using pubkey: {pubkey_points[i].sec(compressed=False).hex()}")
+        signature = der_signatures[i]
+        print(f"Using pubkey: {point.sec(compressed=False).hex()}")
         logging.info(f"Checking signature: {signature}")
 
-        print(hex(sig_hash))
         valid = point.verify(sig_hash, signature)
         check_sig = tx_obj.check_sig_legacy(
             TX_INPUT_INDEX,
@@ -306,4 +316,23 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
         print(valid)
         print(check_sig)
 
-    pass
+    # finalize signatures
+    sighash_byte = int_to_byte(SIGHASH_ALL)
+    tx_in.finalize_p2sh_multisig([der_signatures[1].der() + sighash_byte, der_signatures[0].der() + sighash_byte], redeem_script)
+    print("scriptsig: ", tx_in.script_sig)
+
+    print("\nTX Details: ", tx_obj)
+
+    publish = True
+    if publish:
+        tx_raw = tx_obj.serialize().hex()
+        logging.info(f"Publishing transaction: {tx_raw}")
+        response = blockstream.tx_post_tx(tx_raw)
+        if response and response.status_code == 200:
+            logging.info("Transaction published successfully!")
+            return {"tx_id": tx_obj.id(), "status": "success"}
+        else:
+            logging.error("Error publishing transaction")
+            return jsonify(error="Error publishing transaction"), 400
+    else:
+        return {"tx_id": tx_obj.id(), "status": "debug"}

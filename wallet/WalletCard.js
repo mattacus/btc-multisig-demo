@@ -13,7 +13,7 @@ import {
 import Grid from "@mui/material/Unstable_Grid2";
 import ecc from "@bitcoinerlab/secp256k1";
 import { ECPairFactory } from "ecpair";
-import { crypto, script } from "bitcoinjs-lib";
+import { crypto } from "bitcoinjs-lib";
 
 const ECPair = ECPairFactory(ecc);
 
