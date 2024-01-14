@@ -216,8 +216,8 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
             input_count=len(spending_utxos),
             p2pkh_output_count=(1 if receive_address_script_type == "P2PKH" else 0),
             p2wpkh_output_count=(1 if receive_address_script_type == "P2WPKH" else 0),
-            p2sh_output_count=(1 if receive_address_script_type == "P2SH" else 0),
-            p2wsh_output_count=(1 if receive_address_script_type == "P2WSH" else 0)
+            p2sh_output_count=(1 if send_address_script_type == "P2SH" else 0),
+            p2wsh_output_count=(1 if send_address_script_type == "P2WSH" else 0)
         )
         tx_size = tx_size_stats["tx_vbytes"]
         logging.info(f"Calculated transaction size upper bound: {tx_size} vbytes")
@@ -261,7 +261,6 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
 
 def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_public_keys, redeem_script_hex, publish=False):
     try:
-        REVERSE_KEY_SIG_ORDERING = True
         logging.info("*************** FINALIZING MULTISIG TX ***************")
         logging.info(f"Input signature data: {signature_data}")
         logging.info(f"Input public keys: {sec_public_keys}")
@@ -290,10 +289,6 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
                 raise Exception("Invalid signature: Must provide both r and s values for signature")
             der_signatures.append(Signature.parse(format_signature_der(sig["r"], sig["s"])))
 
-        # reverse pubkeys to match order of redeem script
-        if REVERSE_KEY_SIG_ORDERING:
-            pubkey_points = pubkey_points[::-1]
-
         for i, point in enumerate(pubkey_points):
             signature = der_signatures[i]
             logging.info(f"Using pubkey: {point.sec(compressed=False).hex()}")
@@ -309,10 +304,13 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
             )
             logging.info(f"Signature {i} transaction check : {check_sig}")
 
+            if not valid or not check_sig:
+                raise Exception(f"Invalid signature {i}")
+
         # finalize signatures
         sighash_byte = int_to_byte(SIGHASH_ALL)
         # reverse order when adding signatures to match order of redeem script
-        final_signatures = [sig.der() + sighash_byte for sig in der_signatures[::-1]]
+        final_signatures = [sig.der() + sighash_byte for sig in der_signatures]
         tx_in.finalize_p2sh_multisig(final_signatures, redeem_script)
 
         logging.info(f"TX Details: {tx_obj}")

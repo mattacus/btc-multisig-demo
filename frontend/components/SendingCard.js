@@ -40,7 +40,7 @@ const SendingCard = () => {
   const [sendingAmount, setSendingAmount] = React.useState(
     DEFAULT_SENDING_AMOUNT_BTC
   );
-  const [feeRate, setFeeRate] = React.useState(1);
+  const [feeRate, setFeeRate] = React.useState(2);
   const [receivingAddress, setReceivingAddress] = React.useState("");
   const [isDebugTransaction, setIsDebugTransaction] = React.useState(true);
 

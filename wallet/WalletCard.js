@@ -13,17 +13,23 @@ import ecc from "@bitcoinerlab/secp256k1";
 import { ECPairFactory } from "ecpair";
 import { crypto } from "bitcoinjs-lib";
 
-const ECPair = ECPairFactory(ecc);
+// TEST HASH: 9a0027133f5883cc7d353e3cbad8648a9539ba33a73e59371f896d7225ff7baa
 
 const WalletCard = ({ name = "Untitled Key", keyIndex, defaultSecret }) => {
   const [error, setError] = React.useState(null);
   const [secret, setSecret] = React.useState(defaultSecret);
+  const [eccPair, setEccPair] = React.useState(null); // public-private key pair
   const [sigHash, setSigHash] = React.useState("");
   const [signature, setSignature] = React.useState("");
 
-  keyPair = ECPair.fromPrivateKey(crypto.hash256(secret), {
-    compressed: false,
-  });
+  React.useEffect(() => {
+    const ECPair = ECPairFactory(ecc);
+    setEccPair(
+      ECPair.fromPrivateKey(crypto.hash256(secret), {
+        compressed: false,
+      })
+    );
+  }, [secret]);
 
   const signTransactionHash = () => {
     if (!sigHash) {
@@ -31,10 +37,12 @@ const WalletCard = ({ name = "Untitled Key", keyIndex, defaultSecret }) => {
       return;
     }
 
-    const sig = keyPair.sign(Buffer.from(sigHash, "hex"));
+    const sig = eccPair.sign(Buffer.from(sigHash, "hex"));
     setSignature(sig);
-    console.log(sig);
-    console.log(keyPair.verify(Buffer.from(sigHash, "hex"), sig));
+    console.log(
+      "signature valid:",
+      eccPair.verify(Buffer.from(sigHash, "hex"), sig)
+    );
 
     let r = sig.slice(0, 32);
     let s = sig.slice(32, 64);
@@ -73,13 +81,13 @@ const WalletCard = ({ name = "Untitled Key", keyIndex, defaultSecret }) => {
                 </Grid>
                 <Grid>
                   <Typography variant="body1">
-                    Uncompressed Public Key:{" "}
+                    Uncompressed Public Key:
                   </Typography>
                   <Typography
                     variant="caption"
                     sx={{ overflowWrap: "anywhere" }}
                   >
-                    {keyPair.publicKey.toString("hex")}
+                    {eccPair ? eccPair.publicKey.toString("hex") : ""}
                   </Typography>
                 </Grid>
                 <Grid>

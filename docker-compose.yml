@@ -27,3 +27,17 @@ services:
       - 3000:3000
     working_dir: /frontend
     command: bash -c "npm install && npm start"
+
+
+  wallet:
+      image: node:20-bullseye-slim
+      env_file:
+        - .env
+      user: node
+      container_name: btc-multisig-wallet
+      volumes:
+        - .:/wallet
+      ports:
+        - 3001:3001
+      working_dir: /wallet
+      command: bash -c "npm install && npm run start-wallet"
