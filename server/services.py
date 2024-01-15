@@ -5,7 +5,7 @@ from flask import jsonify
 from buidl import PrivateKey, S256Point, Signature
 from buidl.tx import Tx, TxIn, TxOut
 from buidl.script import RedeemScript
-from buidl.helper import int_to_big_endian, big_endian_to_int, int_to_byte, SIGHASH_ALL
+from buidl.helper import int_to_big_endian, big_endian_to_int, sha256, int_to_byte, SIGHASH_ALL
 from blockstream_api import blockstream
 from util import (
     get_testnet_funding_private_keys,
@@ -242,12 +242,17 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
         unsigned_tx_obj = Tx(1, tx_ins, tx_outs, 0, network=BITCOIN_NETWORK, segwit=is_segwit_tx)
         logging.info(f"Created unsigned transaction: {unsigned_tx_obj}")
 
+        msg_hash = sha256(unsigned_tx_obj.sig_hash_legacy(0, redeem_script, raw_msg=True))
+        print(msg_hash.hex())
+        print(sha256(msg_hash).hex())
+
         signature_hashes = []
         if is_segwit_tx:
             raise Exception("P2WSH not yet implemented")
         else:
             for i in range(len(unsigned_tx_obj.tx_ins)):
-                signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
+                # signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
+                signature_hashes.append(sha256(unsigned_tx_obj.sig_hash_legacy(i, redeem_script, raw_msg=True)).hex())
 
         logging.info(f"Input SigHashes: {signature_hashes}")
 
@@ -277,7 +282,7 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
 
         logging.info(f"Redeem script: {redeem_script}")
         sig_hash = tx_obj.sig_hash_legacy(0, redeem_script)
-        logging.info(f"Signature hash script: {hex(sig_hash)}")
+        logging.info(f"Signature hash: {hex(sig_hash)}")
 
         # TODO: Handle multi input transactions
         TX_INPUT_INDEX = 0

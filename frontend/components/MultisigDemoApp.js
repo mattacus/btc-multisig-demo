@@ -13,6 +13,8 @@ import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import Grid from "@mui/material/Unstable_Grid2";
 import PublicKeyCard from "./PublicKeyCard";
 import SignatureCard from "./SignatureCard";
+import LedgerPublicKeyCard from "./LedgerPublicKeyCard";
+import LedgerSignatureCard from "./LedgerSignatureCard";
 import FundingCard from "./FundingCard";
 import SendingCard from "./SendingCard";
 import KeySetupControls from "./KeySetupControls";
@@ -72,7 +74,10 @@ const MultisigDemoApp = () => {
                 .fill("")
                 .map((_, i) => (
                   <Grid xs={4} key={`Public Key ${i + 1}`}>
-                    <PublicKeyCard name={`Public Key ${i + 1}`} keyIndex={i} />
+                    <LedgerPublicKeyCard
+                      name={`Public Key ${i + 1}`}
+                      keyIndex={i}
+                    />
                   </Grid>
                 ))}
             </Grid>
@@ -124,7 +129,7 @@ const MultisigDemoApp = () => {
               .fill("")
               .map((_, i) => (
                 <Grid xs={4} key={`Signature ${i + 1}`}>
-                  <SignatureCard
+                  <LedgerSignatureCard
                     name={`Signature for Key ${i + 1}`}
                     keyIndex={i}
                   />
