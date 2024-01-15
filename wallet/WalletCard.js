@@ -1,5 +1,7 @@
 import * as React from "react";
 import {
+  Alert,
+  AlertTitle,
   Grid,
   Card,
   CardContent,
@@ -7,15 +9,28 @@ import {
   CardActions,
   Button,
   TextField,
+  AlertTitle,
 } from "@mui/material";
+import { KeyIcon } from "@bitcoin-design/bitcoin-icons-react/filled";
+import { DevicesIcon } from "@bitcoin-design/bitcoin-icons-react/filled";
+import BorderColorIcon from "@mui/icons-material/BorderColor";
+import DeleteIcon from "@mui/icons-material/Delete";
 import Grid from "@mui/material/Unstable_Grid2";
+import { useTheme } from "@mui/material/styles";
+
 import ecc from "@bitcoinerlab/secp256k1";
 import { ECPairFactory } from "ecpair";
 import { crypto } from "bitcoinjs-lib";
 
 // TEST HASH: 9a0027133f5883cc7d353e3cbad8648a9539ba33a73e59371f896d7225ff7baa
 
-const WalletCard = ({ name = "Untitled Key", keyIndex, defaultSecret }) => {
+const WalletCard = ({
+  name = "Untitled Wallet",
+  walletIndex,
+  defaultSecret,
+  handleRemoveWallet,
+}) => {
+  const theme = useTheme();
   const [error, setError] = React.useState(null);
   const [secret, setSecret] = React.useState(defaultSecret);
   const [eccPair, setEccPair] = React.useState(null); // public-private key pair
@@ -24,55 +39,83 @@ const WalletCard = ({ name = "Untitled Key", keyIndex, defaultSecret }) => {
 
   React.useEffect(() => {
     const ECPair = ECPairFactory(ecc);
-    setEccPair(
-      ECPair.fromPrivateKey(crypto.hash256(secret), {
-        compressed: false,
-      })
-    );
+    if (secret) {
+      setEccPair(
+        ECPair.fromPrivateKey(crypto.hash256(Buffer.from(secret)), {
+          compressed: false,
+        })
+      );
+    } else {
+      setEccPair(null);
+    }
   }, [secret]);
 
   const signTransactionHash = () => {
-    if (!sigHash) {
-      setError("Transaction hash is empty");
-      return;
+    try {
+      if (!sigHash) {
+        setError("Transaction hash is empty");
+        return;
+      }
+
+      if (!eccPair) {
+        setError("No Keypair found");
+        return;
+      }
+
+      const sig = eccPair.sign(Buffer.from(sigHash, "hex"));
+      setSignature(sig);
+      console.log(
+        "signature valid:",
+        eccPair.verify(Buffer.from(sigHash, "hex"), sig)
+      );
+
+      let r = sig.slice(0, 32);
+      let s = sig.slice(32, 64);
+      console.log("r", r.toString("hex"));
+      console.log("s", s.toString("hex"));
+    } catch (e) {
+      setError(String(e.message || e));
     }
-
-    const sig = eccPair.sign(Buffer.from(sigHash, "hex"));
-    setSignature(sig);
-    console.log(
-      "signature valid:",
-      eccPair.verify(Buffer.from(sigHash, "hex"), sig)
-    );
-
-    let r = sig.slice(0, 32);
-    let s = sig.slice(32, 64);
-    console.log("r", r.toString("hex"));
-    console.log("s", s.toString("hex"));
   };
 
   return (
     <>
-      <Card sx={{ width: 300 }}>
-        <Grid
-          sx={{ height: "100%" }}
-          container
-          direction={"column"}
-          justifyContent={"space-between"}
-        >
+      <Card sx={{ width: 300, height: "100%" }}>
+        <Grid sx={{ height: "100%" }} container direction={"column"}>
           <Grid>
             <CardContent>
-              <Typography color="text.secondary" gutterBottom>
-                {name + " " + keyIndex}
-              </Typography>
-              <Grid container direction={"column"} spacing={1}>
+              <Grid
+                container
+                direction={"column"}
+                alignItems="center"
+                spacing={3}
+              >
+                <Grid>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography color="text.secondary">{name}</Typography>
+                    <DevicesIcon
+                      style={{
+                        width: 32,
+                        height: 32,
+                        color: theme.palette.text.secondary,
+                      }}
+                    />
+                  </div>
+                </Grid>
                 <Grid>
                   <TextField
                     label="Wallet Secret"
                     type="string"
                     spellCheck={false}
                     multiline
-                    sx={{ minWidth: 250 }}
-                    variant="standard"
+                    sx={{ minWidth: 275 }}
+                    variant="outlined"
                     value={secret}
                     onChange={(e) => {
                       setSecret(e.target.value ?? "");
@@ -80,15 +123,24 @@ const WalletCard = ({ name = "Untitled Key", keyIndex, defaultSecret }) => {
                   />
                 </Grid>
                 <Grid>
-                  <Typography variant="body1">
-                    Uncompressed Public Key:
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ overflowWrap: "anywhere" }}
-                  >
-                    {eccPair ? eccPair.publicKey.toString("hex") : ""}
-                  </Typography>
+                  <Alert severity="warning" icon={false}>
+                    <AlertTitle>
+                      <Grid
+                        container
+                        justifyContent="space-around"
+                        alignContent="center"
+                      >
+                        <KeyIcon width={24} height={24} />
+                        Uncompressed Public Key:
+                      </Grid>
+                    </AlertTitle>
+                    <Typography
+                      variant="caption"
+                      sx={{ overflowWrap: "anywhere" }}
+                    >
+                      {eccPair ? eccPair.publicKey.toString("hex") : ""}
+                    </Typography>
+                  </Alert>
                 </Grid>
                 <Grid>
                   <TextField
@@ -96,8 +148,8 @@ const WalletCard = ({ name = "Untitled Key", keyIndex, defaultSecret }) => {
                     type="string"
                     spellCheck={false}
                     multiline
-                    sx={{ minWidth: 250 }}
-                    variant="standard"
+                    sx={{ minWidth: 275 }}
+                    variant="outlined"
                     value={sigHash}
                     onChange={(e) => {
                       setSigHash(e.target.value ?? "");
@@ -108,30 +160,48 @@ const WalletCard = ({ name = "Untitled Key", keyIndex, defaultSecret }) => {
                   <Button
                     size="small"
                     variant="outlined"
+                    sx={{ minWidth: 275 }}
                     onClick={() => {
                       setError(null);
                       signTransactionHash();
                     }}
+                    startIcon={<BorderColorIcon />}
                   >
                     Sign Transaction Hash
                   </Button>
                 </Grid>
                 {signature && (
                   <Grid>
-                    <Typography variant="body1">Signature: </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ overflowWrap: "anywhere" }}
-                    >
-                      {signature.toString("hex")}
-                    </Typography>
+                    <Alert severity="success" icon={false}>
+                      <AlertTitle>Signature:</AlertTitle>
+                      <Typography
+                        variant="caption"
+                        sx={{ overflowWrap: "anywhere" }}
+                      >
+                        {signature.toString("hex")}
+                      </Typography>
+                    </Alert>
                   </Grid>
                 )}
               </Grid>
             </CardContent>
           </Grid>
           <Grid>
-            <CardActions></CardActions>
+            <CardActions>
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                sx={{ minWidth: 275 }}
+                onClick={() => {
+                  setError(null);
+                  handleRemoveWallet(walletIndex);
+                }}
+                startIcon={<DeleteIcon />}
+              >
+                Delete Wallet
+              </Button>
+            </CardActions>
           </Grid>
         </Grid>
       </Card>
