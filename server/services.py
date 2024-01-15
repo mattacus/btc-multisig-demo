@@ -309,7 +309,6 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
 
         # finalize signatures
         sighash_byte = int_to_byte(SIGHASH_ALL)
-        # reverse order when adding signatures to match order of redeem script
         final_signatures = [sig.der() + sighash_byte for sig in der_signatures]
         tx_in.finalize_p2sh_multisig(final_signatures, redeem_script)
 
