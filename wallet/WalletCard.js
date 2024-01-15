@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { KeyIcon } from "@bitcoin-design/bitcoin-icons-react/filled";
 import { DevicesIcon } from "@bitcoin-design/bitcoin-icons-react/filled";
+import { SignIcon } from "@bitcoin-design/bitcoin-icons-react/filled";
 import BorderColorIcon from "@mui/icons-material/BorderColor";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Grid from "@mui/material/Unstable_Grid2";
@@ -125,13 +126,11 @@ const WalletCard = ({
                 <Grid>
                   <Alert severity="warning" icon={false}>
                     <AlertTitle>
-                      <Grid
-                        container
-                        justifyContent="space-around"
-                        alignContent="center"
-                      >
-                        <KeyIcon width={24} height={24} />
-                        Uncompressed Public Key:
+                      <Grid container spacing={1} sx={{ m: 0 }}>
+                        <Grid>
+                          <KeyIcon style={{ width: 24, height: 24 }} />
+                        </Grid>
+                        <Grid>Uncompressed Public Key:</Grid>
                       </Grid>
                     </AlertTitle>
                     <Typography
@@ -173,7 +172,14 @@ const WalletCard = ({
                 {signature && (
                   <Grid>
                     <Alert severity="success" icon={false}>
-                      <AlertTitle>Signature:</AlertTitle>
+                      <AlertTitle>
+                        <Grid container spacing={1} sx={{ m: 0 }}>
+                          <Grid>
+                            <SignIcon style={{ width: 24, height: 24 }} />
+                          </Grid>
+                          <Grid>Signature:</Grid>
+                        </Grid>
+                      </AlertTitle>
                       <Typography
                         variant="caption"
                         sx={{ overflowWrap: "anywhere" }}

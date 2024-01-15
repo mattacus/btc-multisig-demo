@@ -10,13 +10,18 @@ import {
   TextField,
   Alert,
 } from "@mui/material";
+import PublishIcon from "@mui/icons-material/Publish";
 import Grid from "@mui/material/Unstable_Grid2";
+import { useTheme } from "@mui/material/styles";
+import { SignIcon } from "@bitcoin-design/bitcoin-icons-react/filled";
+
 import {
   useMultisigContext,
   useMultisigDispatchContext,
 } from "../MultisigContext";
 
 const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
+  const theme = useTheme();
   const multisigContext = useMultisigContext();
   const multisigDispatch = useMultisigDispatchContext();
 
@@ -60,10 +65,23 @@ const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
         >
           <Grid>
             <CardContent>
-              <Typography color="text.secondary" gutterBottom>
-                {name}
-              </Typography>
               <Grid container direction={"column"} spacing={1}>
+                <Grid container>
+                  <Grid>
+                    <Typography color="text.secondary" gutterBottom>
+                      {name}
+                    </Typography>
+                  </Grid>
+                  <Grid>
+                    <SignIcon
+                      style={{
+                        width: 24,
+                        height: 24,
+                        color: theme.palette.text.secondary,
+                      }}
+                    />
+                  </Grid>
+                </Grid>
                 <Grid>
                   <TextField
                     label="Signature Data"
@@ -93,6 +111,7 @@ const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
               <Button
                 size="small"
                 variant="outlined"
+                startIcon={<PublishIcon />}
                 disabled={!isSigningEnabled}
                 onClick={() => {
                   setError(null);

@@ -1,4 +1,10 @@
-import { IconButton, Tooltip, Alert, AlertTitle } from "@mui/material";
+import {
+  IconButton,
+  Tooltip,
+  Alert,
+  AlertTitle,
+  Skeleton,
+} from "@mui/material";
 import { ContentCopy, OpenInNew } from "@mui/icons-material";
 
 const TransactionInfoBox = ({ setParentSnackbarStatus, transactionID }) => {
@@ -29,6 +35,7 @@ const TransactionInfoBox = ({ setParentSnackbarStatus, transactionID }) => {
   return (
     <Alert
       severity="info"
+      sx={{ maxWidth: 500, overflowWrap: "anywhere" }}
       action={
         <div
           style={{
@@ -42,6 +49,7 @@ const TransactionInfoBox = ({ setParentSnackbarStatus, transactionID }) => {
             <IconButton
               color="inherit"
               size="small"
+              disabled={!transactionID}
               onClick={handleTxClipboardCopy}
             >
               <ContentCopy />
@@ -51,6 +59,7 @@ const TransactionInfoBox = ({ setParentSnackbarStatus, transactionID }) => {
             <IconButton
               color="inherit"
               size="small"
+              disabled={!transactionID}
               onClick={handleTxOpenBlockExplorer}
             >
               <OpenInNew />
@@ -60,7 +69,14 @@ const TransactionInfoBox = ({ setParentSnackbarStatus, transactionID }) => {
       }
     >
       <AlertTitle>Transaction ID:</AlertTitle>
-      {transactionID}
+      {transactionID ? (
+        transactionID
+      ) : (
+        <>
+          <Skeleton width={350} />
+          <Skeleton width={350} />
+        </>
+      )}
     </Alert>
   );
 };

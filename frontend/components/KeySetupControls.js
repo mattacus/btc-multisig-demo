@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
-  Grid,
   Card,
   CardContent,
   Typography,
@@ -9,8 +8,9 @@ import {
   Alert,
   AlertTitle,
 } from "@mui/material";
-
 import Grid from "@mui/material/Unstable_Grid2";
+import { TwoKeysIcon } from "@bitcoin-design/bitcoin-icons-react/filled";
+
 import NumberInput from "./shared/NumberInput";
 import {
   useMultisigContext,
@@ -124,7 +124,19 @@ const KeySetupControls = () => {
       )}
       {isSuccessCreateMultisigAddress && multisigAddressData && (
         <Alert severity="success">
-          <AlertTitle>Multisig Address Successfully Created!</AlertTitle>
+          <AlertTitle>
+            <Grid container spacing={1} sx={{ m: 0 }}>
+              <Grid>Multisig Address Successfully Created!</Grid>
+              <Grid>
+                <TwoKeysIcon
+                  style={{
+                    width: 24,
+                    height: 24,
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </AlertTitle>
           <strong>Address: </strong>
           <br />
           {multisigAddressData.address}

@@ -26,7 +26,6 @@ import { getFeeRatesRange } from "../util";
 
 const FundingCard = () => {
   const multisigContext = useMultisigContext();
-
   const [snackbarStatus, setSnackbarStatus] = React.useState({
     open: false,
     message: "",
@@ -116,42 +115,51 @@ const FundingCard = () => {
     <>
       <Card>
         <CardContent>
-          <Typography gutterBottom>Testnet Funding Details</Typography>
-          <Grid container wrap="nowrap">
-            <Grid container direction={"column"} spacing={1} xs={8}>
-              <Grid container spacing={2}>
-                <Grid>
-                  <AddressSelect
-                    label={"Testnet Funding Address"}
-                    selectedAddress={fundingAddress}
-                    setSelectedAddress={setfundingAddress}
-                  />
-                </Grid>
-                <Grid>{addressInfo && AddressInfoBox(addressInfo)}</Grid>
+          <Grid container direction={"column"} spacing={1}>
+            <Grid>
+              <Typography gutterBottom>Testnet Funding Details</Typography>
+            </Grid>
+            <Grid
+              container
+              spacing={2}
+              justifyContent="space-between"
+              alignItems="center"
+              wrap="nowrap"
+              sx={{ width: "100%" }}
+            >
+              <Grid>
+                <AddressSelect
+                  label={"Testnet Funding Address"}
+                  selectedAddress={fundingAddress}
+                  setSelectedAddress={setfundingAddress}
+                />
               </Grid>
               <Grid>
-                <TransactionAmountInputs
-                  feeRate={feeRate}
-                  handleFeeRateChange={setFeeRate}
-                  fundingAmount={fundingAmount}
-                  handleFundingAmountChange={setFundingAmount}
-                  feeMin={getFeeRatesRange(feeEstimates).min}
-                  feeMax={getFeeRatesRange(feeEstimates).max}
+                <AddressInfoBox addressInfo={addressInfo} />
+              </Grid>
+              <Grid>
+                <TextField
+                  required
+                  label="Multisig Address"
+                  type="string"
+                  multiline
+                  sx={{ minWidth: 250 }}
+                  variant="standard"
+                  value={sendAddress}
+                  onChange={(e) => {
+                    setSendAddress(e.target.value);
+                  }}
                 />
               </Grid>
             </Grid>
-            <Grid container direction={"column"} spacing={1}>
-              <TextField
-                required
-                label="Multisig Address"
-                type="string"
-                multiline
-                sx={{ minWidth: 250 }}
-                variant="standard"
-                value={sendAddress}
-                onChange={(e) => {
-                  setSendAddress(e.target.value);
-                }}
+            <Grid>
+              <TransactionAmountInputs
+                feeRate={feeRate}
+                handleFeeRateChange={setFeeRate}
+                fundingAmount={fundingAmount}
+                handleFundingAmountChange={setFundingAmount}
+                feeMin={getFeeRatesRange(feeEstimates).min}
+                feeMax={getFeeRatesRange(feeEstimates).max}
               />
             </Grid>
           </Grid>
@@ -183,7 +191,7 @@ const FundingCard = () => {
               <FormControlLabel
                 control={
                   <Switch
-                    sx={{ ml: 2 }}
+                    sx={{ ml: 6 }}
                     checked={isDebugTransaction}
                     onChange={(e) => setIsDebugTransaction(e.target.checked)}
                   />
@@ -192,12 +200,14 @@ const FundingCard = () => {
               />
             </Grid>
             <Grid sx={{ mt: -8 }}>
-              {isSuccessCreateFundingTransaction && fundingTransactionData && (
-                <TransactionInfoBox
-                  setParentSnackbarStatus={setSnackbarStatus}
-                  transactionID={fundingTransactionData.tx_id}
-                />
-              )}
+              <TransactionInfoBox
+                setParentSnackbarStatus={setSnackbarStatus}
+                transactionID={
+                  isSuccessCreateFundingTransaction && fundingTransactionData
+                    ? fundingTransactionData.tx_id
+                    : undefined
+                }
+              />
             </Grid>
           </Grid>
         </CardActions>

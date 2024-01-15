@@ -1,13 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  Select,
-  MenuItem,
-  Autocomplete,
-  Typography,
-  TextField,
-  InputLabel,
-  FormControl,
-} from "@mui/material";
+import { Autocomplete, Typography, TextField } from "@mui/material";
+
 import backendApi from "../../api";
 
 const AddressSelect = ({ label, selectedAddress, setSelectedAddress }) => {
@@ -32,7 +25,6 @@ const AddressSelect = ({ label, selectedAddress, setSelectedAddress }) => {
     <>
       <Autocomplete
         sx={{ minWidth: 300 }}
-        size="small"
         freeSolo
         options={testnetAddresses ? testnetAddresses : []}
         value={selectedAddress}
@@ -41,13 +33,10 @@ const AddressSelect = ({ label, selectedAddress, setSelectedAddress }) => {
         }}
         renderInput={(params) => <TextField {...params} label={label} />}
       />
-
-      {getErrors().length ? (
+      {getErrors().length > 0 && (
         <Typography variant="caption" color="error">
           {getErrors().join(", ")}
         </Typography>
-      ) : (
-        <p />
       )}
     </>
   );

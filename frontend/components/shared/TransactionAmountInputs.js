@@ -16,10 +16,7 @@ const TransactionAmountInputs = ({
           required
           label="Send Amount (BTC)"
           type="number"
-          sx={{ mt: 2, minWidth: 200 }}
-          InputLabelProps={{
-            shrink: true,
-          }}
+          sx={{ mt: 2, width: 200 }}
           variant="standard"
           value={fundingAmount}
           onChange={(e) => handleFundingAmountChange(e.target.value)}
@@ -34,7 +31,7 @@ const TransactionAmountInputs = ({
         <Grid container spacing={2}>
           <Grid>
             <Slider
-              sx={{ width: 80 }}
+              sx={{ width: 100 }}
               value={feeRate}
               step={1}
               min={feeMin}

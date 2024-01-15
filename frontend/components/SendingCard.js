@@ -13,8 +13,11 @@ import {
   Alert,
   AlertTitle,
   Snackbar,
+  Skeleton,
 } from "@mui/material";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Grid from "@mui/material/Unstable_Grid2";
+
 import backendApi from "../api";
 import {
   useMultisigContext,
@@ -64,7 +67,7 @@ const SendingCard = () => {
 
   const isTransactionCreationEnabled =
     sendingAddress && addressInfo && sendingAmount > 0 && receivingAddress;
-  const isSendingEnabled = true;
+  const isSendingEnabled = Object.keys(multisigContext.signatures).length > 0;
 
   const {
     data: feeEstimates,
@@ -150,43 +153,71 @@ const SendingCard = () => {
     <>
       <Card>
         <CardContent>
-          <Typography gutterBottom>Multisig Sending Details</Typography>
-          <Grid container wrap="nowrap">
-            <Grid container direction={"column"} spacing={1} xs={8}>
-              <Grid container spacing={2}>
-                <Grid>
-                  <TextField
-                    required
-                    label="Multisig Address"
-                    type="string"
-                    multiline
-                    sx={{ minWidth: 250 }}
-                    variant="standard"
-                    value={sendingAddress}
-                    onChange={(e) => {
-                      setSendingAddress(e.target.value);
-                    }}
-                  />
-                </Grid>
-                <Grid>{addressInfo && AddressInfoBox(addressInfo)}</Grid>
-              </Grid>
+          <Grid container direction={"column"} spacing={1}>
+            <Grid>
+              <Typography gutterBottom>Multisig Sending Details</Typography>
+            </Grid>
+            <Grid
+              container
+              spacing={2}
+              justifyContent="space-between"
+              alignItems="center"
+              wrap="nowrap"
+              sx={{ width: "100%" }}
+            >
               <Grid>
-                <TransactionAmountInputs
-                  feeRate={feeRate}
-                  handleFeeRateChange={setFeeRate}
-                  fundingAmount={sendingAmount}
-                  handleFundingAmountChange={setSendingAmount}
-                  feeMin={getFeeRatesRange(feeEstimates).min}
-                  feeMax={getFeeRatesRange(feeEstimates).max}
+                <TextField
+                  required
+                  label="Multisig Address"
+                  type="string"
+                  multiline
+                  sx={{ minWidth: 250 }}
+                  variant="standard"
+                  value={sendingAddress}
+                  onChange={(e) => {
+                    setSendingAddress(e.target.value);
+                  }}
                 />
               </Grid>
-              <Grid
-                container
-                justifyContent="space-between"
-                spacing={2}
-                sx={{ mb: 2 }}
-              >
-                <Grid sx={{ ml: -1 }}>
+              <Grid>
+                <AddressInfoBox addressInfo={addressInfo} />
+              </Grid>
+              <Grid>
+                <AddressSelect
+                  label={"Receiving Address"}
+                  selectedAddress={receivingAddress}
+                  setSelectedAddress={setReceivingAddress}
+                />
+              </Grid>
+            </Grid>
+            <Grid>
+              <TransactionAmountInputs
+                feeRate={feeRate}
+                handleFeeRateChange={setFeeRate}
+                fundingAmount={sendingAmount}
+                handleFundingAmountChange={setSendingAmount}
+                feeMin={getFeeRatesRange(feeEstimates).min}
+                feeMax={getFeeRatesRange(feeEstimates).max}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+        <CardActions>
+          <Grid
+            container
+            sx={{ width: "100%" }}
+            alignItems="flex-end"
+            justifyContent="space-between"
+            spacing={2}
+          >
+            <Grid
+              container
+              direction="column"
+              justifyContent="flex-start"
+              sx={{ height: 200 }}
+            >
+              <Grid container sx={{ height: 70 }} alignItems="center">
+                <Grid>
                   <Button
                     size="small"
                     variant="contained"
@@ -203,70 +234,84 @@ const SendingCard = () => {
                     Create Transaction for Signing
                   </Button>
                 </Grid>
-                <Grid>
-                  {multisigContext.sigHashList.length > 0 && (
-                    <Alert
-                      severity="info"
-                      sx={{ maxWidth: 400, overflowWrap: "anywhere" }}
-                    >
-                      <AlertTitle>Unsigned Transaction Created</AlertTitle>
-                      Transaction Hash for Signing:
-                      <br />
-                      {multisigContext.sigHashList[0]}
-                    </Alert>
+              </Grid>
+              <Grid>
+                <Alert
+                  severity="info"
+                  sx={{ maxWidth: 400, overflowWrap: "anywhere" }}
+                >
+                  <AlertTitle>Unsigned Transaction Hash: </AlertTitle>
+                  {multisigContext.sigHashList.length > 0 ? (
+                    multisigContext.sigHashList[0]
+                  ) : (
+                    <>
+                      <Skeleton width={300} />
+                      <Skeleton width={300} />
+                    </>
                   )}
-                </Grid>
+                </Alert>
               </Grid>
             </Grid>
-            <Grid container direction={"column"} spacing={1}>
-              <AddressSelect
-                label={"Receiving Address"}
-                selectedAddress={receivingAddress}
-                setSelectedAddress={setReceivingAddress}
-              />
+            <Grid
+              container
+              direction="column"
+              justifyContent="center"
+              sx={{ height: 200 }}
+            >
+              <Grid>
+                <ArrowForwardIcon fontSize="large" />
+              </Grid>
             </Grid>
-          </Grid>
-        </CardContent>
-        <CardActions>
-          <Grid
-            container
-            sx={{ width: "100%" }}
-            alignItems="flex-end"
-            justifyContent="space-between"
-          >
-            <Grid>
-              <Button
-                size="small"
-                variant="contained"
-                disabled={!isSendingEnabled}
-                onClick={() => {
-                  finalizeMultisigTransactionMutation.mutate({
-                    signatures: multisigContext.signatures,
-                    transactionData: multisigContext.currentMultisigTransaction,
-                  });
-                }}
-              >
-                Finalize Multisig Transaction
-              </Button>
-              <FormControlLabel
-                control={
-                  <Switch
-                    sx={{ ml: 2 }}
-                    checked={isDebugTransaction}
-                    onChange={(e) => setIsDebugTransaction(e.target.checked)}
+            <Grid
+              container
+              direction="column"
+              justifyContent="flex-start"
+              sx={{ height: 200 }}
+            >
+              <Grid container alignItems="center">
+                <Grid>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={!isSendingEnabled}
+                    onClick={() => {
+                      finalizeMultisigTransactionMutation.mutate({
+                        signatures: multisigContext.signatures,
+                        transactionData:
+                          multisigContext.currentMultisigTransaction,
+                      });
+                    }}
+                  >
+                    Finalize Multisig Transaction
+                  </Button>
+                </Grid>
+                <Grid>
+                  <FormControlLabel
+                    sx={{ m: 0 }}
+                    control={
+                      <Switch
+                        sx={{ ml: 6 }}
+                        checked={isDebugTransaction}
+                        onChange={(e) =>
+                          setIsDebugTransaction(e.target.checked)
+                        }
+                      />
+                    }
+                    label="Debug"
                   />
-                }
-                label="Debug"
-              />
-            </Grid>
-            <Grid sx={{ mt: -8 }}>
-              {isSuccessFinalizeMultisigTransaction &&
-                finalizeMultisigTransactionData && (
-                  <TransactionInfoBox
-                    setParentSnackbarStatus={setSnackbarStatus}
-                    transactionID={finalizeMultisigTransactionData.tx_id}
-                  />
-                )}
+                </Grid>
+              </Grid>
+              <Grid>
+                <TransactionInfoBox
+                  setParentSnackbarStatus={setSnackbarStatus}
+                  transactionID={
+                    isSuccessFinalizeMultisigTransaction &&
+                    finalizeMultisigTransactionData
+                      ? finalizeMultisigTransactionData.tx_id
+                      : undefined
+                  }
+                />
+              </Grid>
             </Grid>
           </Grid>
         </CardActions>

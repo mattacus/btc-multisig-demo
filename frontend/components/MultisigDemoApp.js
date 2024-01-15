@@ -33,7 +33,7 @@ const CollapseDivider = ({ visible, onClick }) => {
 const MultisigDemoApp = () => {
   const multisigContext = useMultisigContext();
   const [showKeySetup, setShowKeySetup] = React.useState(true);
-  const [showAddressRecieve, setShowAddressRecieve] = React.useState(true);
+  const [showAddressReceive, setShowAddressReceive] = React.useState(true);
   const [showAddressSend, setShowAddressSend] = React.useState(true);
 
   console.log(multisigContext);
@@ -49,7 +49,7 @@ const MultisigDemoApp = () => {
         }}
       >
         <img src={btcLogo} width={50} height={50} alt="logo" />
-        <Typography variant="h3">BTC Multisig Demo</Typography>
+        <Typography variant="h3">Bitcoin Multisig Demo</Typography>
       </Grid>
       <Grid>
         <Typography variant="h6" sx={{ mb: 1 }}>
@@ -81,16 +81,16 @@ const MultisigDemoApp = () => {
       </Grid>
       <Grid>
         <Typography variant="h6" sx={{ mb: 1 }}>
-          Recieve To Multisig Address
+          Fund Multisig Address
         </Typography>
         <CollapseDivider
-          visible={showAddressRecieve}
+          visible={showAddressReceive}
           onClick={(e) => {
             e.preventDefault();
-            setShowAddressRecieve(!showAddressRecieve);
+            setShowAddressReceive(!showAddressReceive);
           }}
         />
-        <Collapse in={showAddressRecieve}>
+        <Collapse in={showAddressReceive}>
           {BITCOIN_NETWORK === "testnet" ? (
             <FundingCard />
           ) : (
