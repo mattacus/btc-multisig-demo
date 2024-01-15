@@ -25,6 +25,7 @@
     "bitcoinjs-lib": "^6.1.5",
     "core-js": "^3.35.0",
     "ecpair": "^2.1.0",
+    "file-saver": "^2.0.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

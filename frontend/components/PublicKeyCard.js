@@ -39,10 +39,14 @@ const PublicKeyCard = ({ name = "Untitled Key", keyIndex }) => {
         },
       });
     } catch (e) {
-      //Catch any error thrown and displays it on the screen
       setError(String(e.message || e));
     }
   };
+
+  // Update the local input field if the public key is updated in the context
+  React.useEffect(() => {
+    setPubKeyData(multisigContext.publicKeyList[keyIndex] ?? "");
+  }, [multisigContext.publicKeyList[keyIndex]]);
 
   return (
     <>

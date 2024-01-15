@@ -50,7 +50,7 @@ const getFormControlProps = (props) => {
 };
 
 const NumberInput = ({
-  initialValue,
+  value,
   min = 0,
   max = Infinity,
   step = 1,
@@ -62,7 +62,6 @@ const NumberInput = ({
   onInvalidInput,
   ...props
 }) => {
-  const [value, setValue] = useState(initialValue?.toString());
   const [addBtnFocus, setAddBtnFocus] = useState(false);
 
   const propDecimalScale = Math.max(
@@ -92,7 +91,6 @@ const NumberInput = ({
   };
 
   const updateChange = (value) => {
-    setValue(value);
     onInvalidInput?.(null);
     const formattedValue = formatValue(value);
     if (formattedValue.toString() === value) onChange?.(formattedValue);

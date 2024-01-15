@@ -1,9 +1,11 @@
 import React from "react";
+import { MULTISIG_ADDRESS_TYPES } from "./const";
 
 const MultisigContext = React.createContext(null);
 const MultisigDispatchContext = React.createContext(null);
 
 const initialState = {
+  multisigAddressType: MULTISIG_ADDRESS_TYPES.p2sh,
   publicKeyList: {},
   quorum: {
     m: 2,
@@ -19,6 +21,7 @@ const initialState = {
 const initialStateTEST = initialState;
 
 // const initialStateTEST = {
+//   multisigAddressType: MULTISIG_ADDRESS_TYPES.p2sh,
 //   publicKeyList: {
 //     0: "042cf12c3d2260a13fab088fc1ab75196c263e1debc1a701c6e950573233655c1840bceecad7aae4c2ff31718ec4eb8c45e74b34aeb37c48b21824dbde983ac072",
 //     1: "04b91f2130d53bed05c73a3a3a74d87922aba5be79451247a410520190e69314ff67fe759ce3e02389f6d3186712880cbe0f3a8fd74236e95d7dfcf6890941aa10",
@@ -49,6 +52,16 @@ const initialStateTEST = initialState;
 
 const reducer = (state, action) => {
   switch (action.type) {
+    case "SET_MULTISIG_ADDRESS_TYPE":
+      return {
+        ...state,
+        multisigAddressType: action.payload,
+      };
+    case "SET_PUBLIC_KEYS":
+      return {
+        ...state,
+        publicKeyList: action.payload,
+      };
     case "SET_PUBLIC_KEY":
       return {
         ...state,
