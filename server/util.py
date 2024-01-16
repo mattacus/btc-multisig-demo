@@ -91,6 +91,34 @@ def select_utxos_lifo(utxos, transaction_total_sats):
     return selected_utxos
 
 
+def select_single_utxo_lifo(utxos, transaction_total_sats):
+    """
+    Select a single UTXO to cover the entire transaction amount and fees, for single input transactions.
+    If there is not enough in any single UTXO, raise an exception.
+    """
+    selected_utxo = None
+    largest = 0
+    usable_utxos = [
+        utxo for utxo in utxos if utxo["status"]["confirmed"] and utxo["value"] > 0
+    ]
+    sorted_utxos = sorted(
+        usable_utxos, key=lambda utxo: (utxo["status"]["block_height"], utxo["value"])
+    )
+
+    for utxo in sorted_utxos:
+        if utxo["value"] > largest:
+            largest = utxo["value"]
+        if utxo["value"] >= transaction_total_sats:
+            selected_utxo = utxo
+            break
+
+    if not selected_utxo:
+        raise Exception(
+            f"Insufficient funds: No single UTXO found greater holding more than {sat_to_btc(transaction_total_sats)} BTC.  Largest: {sat_to_btc(largest)} BTC"
+        )
+    return selected_utxo
+
+
 def format_signature_der(r, s):
     """
     Convert an (r, s) signature into DER format

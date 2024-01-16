@@ -12,6 +12,7 @@ from util import (
     sat_to_btc,
     btc_to_sat,
     select_utxos_lifo,
+    select_single_utxo_lifo,
     get_address_script_type,
     format_signature_der
 )
@@ -228,20 +229,18 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
 
         sending_address_utxos = blockstream.addr_get_address_utxo(send_address)
         sending_amount_sats = btc_to_sat(send_amount_btc)
-        spending_utxos = select_utxos_lifo(
+        spending_utxo = select_single_utxo_lifo(
             sending_address_utxos, sending_amount_sats
         )
-        # TODO: fix dust transactions
-        logging.info(f"Selected spending UTXOs: {spending_utxos}")
-        if len(spending_utxos) > 1:
-            raise Exception("Only single UTXO signing currently supported")
 
-        available_spending_amount_sats = sum([utxo["value"] for utxo in spending_utxos])
+        logging.info(f"Selected spending UTXO: {spending_utxo}")
+
+        available_spending_amount_sats = spending_utxo["value"]
 
         # Get TX Size Upper Bound
         tx_size_stats = calc_tx_size(
             input_script=(send_address_script_type),
-            input_count=len(spending_utxos),
+            input_count=len(spending_utxo),
             p2pkh_output_count=(1 if receive_address_script_type == "P2PKH" else 0),
             p2wpkh_output_count=(1 if receive_address_script_type == "P2WPKH" else 0),
             p2sh_output_count=(1 if send_address_script_type == "P2SH" else 0),
@@ -258,9 +257,10 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
                 Short by {abs(final_change_amount)} sats. Try a lower fee rate, or reduce the transaction amount"
             )
 
+        # Only single input transactions supported for now, to make signing demonstration easier
         tx_ins = []
-        for utxo in spending_utxos:
-            tx_ins.append(TxIn(bytes.fromhex(utxo["txid"]), utxo["vout"]))
+        tx_ins.append(TxIn(bytes.fromhex(spending_utxo["txid"]), spending_utxo["vout"]))
+
         tx_outs = [
             TxOut.to_address(receive_address, sending_amount_sats),
             TxOut.to_address(
