@@ -11,6 +11,7 @@ import {
   Alert,
 } from "@mui/material";
 import PublishIcon from "@mui/icons-material/Publish";
+import DeleteIcon from "@mui/icons-material/Delete";
 import Grid from "@mui/material/Unstable_Grid2";
 import { useTheme } from "@mui/material/styles";
 import { SignIcon } from "@bitcoin-design/bitcoin-icons-react/filled";
@@ -49,6 +50,14 @@ const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
     } catch (e) {
       setError(String(e.message || e));
     }
+  };
+
+  const clearSignature = () => {
+    multisigDispatch({
+      type: "REMOVE_SIGNATURE",
+      payload: keyIndex,
+    });
+    setSignatureData("");
   };
 
   const isSigningEnabled = multisigContext.currentMultisigTransaction;
@@ -118,6 +127,18 @@ const SignatureCard = ({ name = "Untitled Key", keyIndex }) => {
                 }}
               >
                 Record Signature
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={() => {
+                  setError(null);
+                  clearSignature();
+                }}
+              >
+                Clear
               </Button>
             </CardActions>
           </Grid>

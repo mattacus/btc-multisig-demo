@@ -240,7 +240,9 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
         # Get TX Size Upper Bound
         tx_size_stats = calc_tx_size(
             input_script=(send_address_script_type),
-            input_count=len(spending_utxo),
+            input_count=1,  # single utxo for now
+            input_m=quorum["m"],
+            input_n=quorum["n"],
             p2pkh_output_count=(1 if receive_address_script_type == "P2PKH" else 0),
             p2wpkh_output_count=(1 if receive_address_script_type == "P2WPKH" else 0),
             p2sh_output_count=(1 if send_address_script_type == "P2SH" else 0),
@@ -304,6 +306,7 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
         # TODO: Handle multi input transactions
         TX_INPUT_INDEX = 0
 
+        logging.info(f"Address type: {address_type}")
         if address_type == "P2SH":
             redeem_script = RedeemScript.parse(raw=bytes.fromhex(redeem_script_hex))
             sig_hash = tx_obj.sig_hash_legacy(TX_INPUT_INDEX, redeem_script)
@@ -313,33 +316,55 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
         else:
             raise Exception(f"Unsupported address type: {address_type}")
 
+        quorum = redeem_script.get_quorum()
         logging.info(f"Redeem script: {redeem_script}")
         logging.info(f"Signature hash script: {hex(sig_hash)}")
+        logging.info(f"Multisig quorum: {quorum}")
+
+        if len(signature_data.values()) < quorum[0]:
+            raise Exception(f"Insufficient number of signatures  {len(signature_data.values())} < {quorum[0]}")
 
         der_signatures = []
-        for i in range(len(signature_data.values())):
-            sig = signature_data[str(i)]
+        for key in signature_data:
+            sig = signature_data[key]
             if not sig["r"] or not sig["s"]:
                 raise Exception("Invalid signature: Must provide both r and s values for signature")
             der_signatures.append(Signature.parse(format_signature_der(sig["r"], sig["s"])))
 
-        for i, point in enumerate(pubkey_points):
-            signature = der_signatures[i]
-            logging.info(f"Using pubkey: {point.sec(compressed=False).hex()}")
-            logging.info(f"Checking signature: {signature}")
+        for i, signature in enumerate(der_signatures):
+            signature_verified = False
+            # if we have no points left, we have a signature that can't be validated
+            if len(pubkey_points) == 0:
+                raise Exception(f"Signature {i} cannot be validated: no remaining public keys")
+            for point in pubkey_points:
+                logging.info(f"Checking signature {i}: {signature}")
+                logging.info(f"Against pubkey: {point.sec(compressed=False).hex()}")
 
-            valid = point.verify(sig_hash, signature)
-            logging.info(f"Signature {i} verified : {valid}")
-            check_sig = tx_obj.check_sig_segwit(
-                TX_INPUT_INDEX,
-                point,
-                signature,
-                witness_script=redeem_script,
-            )
-            logging.info(f"Signature {i} transaction check : {check_sig}")
+                valid = point.verify(sig_hash, signature)
 
-            if not valid or not check_sig:
-                raise Exception(f"Invalid signature {i}")
+                if address_type == "P2SH":
+                    check_sig = tx_obj.check_sig_legacy(
+                        TX_INPUT_INDEX,
+                        point,
+                        signature,
+                        redeem_script=redeem_script,
+                    )
+                elif address_type == "P2WSH":
+                    check_sig = tx_obj.check_sig_segwit(
+                        TX_INPUT_INDEX,
+                        point,
+                        signature,
+                        witness_script=redeem_script,
+                    )
+                if valid and check_sig:
+                    logging.info(f"Signature {i} verified : {valid}")
+                    logging.info(f"Signature {i} transaction check : {check_sig}")
+                    signature_verified = True
+                    pubkey_points.remove(point)
+                    break
+
+            if not signature_verified:
+                raise Exception(f"Invalid signature {i}: No matching public key found")
 
         # finalize signatures
         sighash_byte = int_to_byte(SIGHASH_ALL)
