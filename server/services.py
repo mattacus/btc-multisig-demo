@@ -306,15 +306,15 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
 
         if address_type == "P2SH":
             redeem_script = RedeemScript.parse(raw=bytes.fromhex(redeem_script_hex))
-            logging.info(f"Redeem script: {redeem_script}")
             sig_hash = tx_obj.sig_hash_legacy(TX_INPUT_INDEX, redeem_script)
-            logging.info(f"Signature hash script: {hex(sig_hash)}")
         elif address_type == "P2WSH":
             redeem_script = WitnessScript.parse(raw=bytes.fromhex(redeem_script_hex))
             sig_hash = tx_obj.sig_hash_bip143(TX_INPUT_INDEX, None, redeem_script)
-            logging.info(f"Signature hash script: {hex(sig_hash)}")
         else:
             raise Exception(f"Unsupported address type: {address_type}")
+
+        logging.info(f"Redeem script: {redeem_script}")
+        logging.info(f"Signature hash script: {hex(sig_hash)}")
 
         der_signatures = []
         for i in range(len(signature_data.values())):
