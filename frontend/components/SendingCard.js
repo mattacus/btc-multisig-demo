@@ -86,7 +86,7 @@ const SendingCard = () => {
         amount,
         feeRate,
         multisigContext.publicKeyList,
-        multisigContext.quorum.m
+        multisigContext.quorum
       ),
     onSuccess: (data) => {
       multisigDispatch({
@@ -111,6 +111,7 @@ const SendingCard = () => {
         transactionData,
         multisigContext.publicKeyList,
         multisigContext.redeemScript,
+        multisigContext.multisigAddressType,
         !isDebugTransaction
       ),
   });

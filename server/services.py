@@ -1,12 +1,12 @@
-import hashlib
 import logging
 
 from flask import jsonify
 from buidl import PrivateKey, S256Point, Signature
 from buidl.tx import Tx, TxIn, TxOut
-from buidl.script import RedeemScript
+from buidl.script import RedeemScript, WitnessScript
 from buidl.helper import int_to_big_endian, big_endian_to_int, int_to_byte, SIGHASH_ALL
 from blockstream_api import blockstream
+from const import (OP_CODE_VALUES)
 from util import (
     get_testnet_funding_private_keys,
     sat_to_btc,
@@ -61,18 +61,43 @@ def construct_p2sh_address_redeem_script(pubkeys, quorum):
         raise ValueError("Must provide at least two public keys as a list")
 
     return RedeemScript.create_p2sh_multisig(
-        quorum_m=quorum,
+        quorum_m=quorum["m"],
         pubkey_hexes=pubkeys,
         sort_keys=False,
     )
 
 
-def create_p2sh_address_details(pubkeys, quorum):
+def construct_p2wsh_address_redeem_script(pubkeys, quorum):
     """
-    Given a list of public keys, create a P2SH address and return it as well as the redeem script
+    Reconstruct a Witness Script from a combination of public keys and a quorum
+    """
+
+    if len(pubkeys) < 2:
+        raise ValueError("Must provide at least two public keys as a list")
+
+    sec_pubkeys = [S256Point.parse(bytes.fromhex(key)).sec() for key in pubkeys]
+
+    quorum_m = OP_CODE_VALUES[f"OP_{quorum["m"]}"]
+    quorum_n = OP_CODE_VALUES[f"OP_{quorum["n"]}"]
+
+    op_check_multisig = OP_CODE_VALUES["OP_CHECKMULTISIG"]
+
+    return WitnessScript(
+        [quorum_m, *sec_pubkeys, quorum_n, op_check_multisig]
+    )
+
+
+def create_multisig_address_details(pubkeys, quorum, address_type):
+    """
+    Given a list of public keys, create a P2SH or P2WSH address and return it as well as the redeem script
     """
     try:
-        redeem_script = construct_p2sh_address_redeem_script(pubkeys.values(), quorum)
+        if address_type == "P2SH":
+            redeem_script = construct_p2sh_address_redeem_script(pubkeys.values(), quorum)
+        elif address_type == "P2WSH":
+            redeem_script = construct_p2wsh_address_redeem_script(pubkeys.values(), quorum)
+        else:
+            raise Exception(f"Unsupported address type: {address_type}")
 
         return {
             "address": redeem_script.address(BITCOIN_NETWORK),
@@ -96,6 +121,7 @@ def send_testnet_payment_from_funding_address(
         funding_keys = get_testnet_funding_private_keys()
         funding_private_key = None
         funding_address_type = get_address_script_type(funding_address)
+        destination_address_type = get_address_script_type(destination_address)
         for key in funding_keys:
             if funding_address_type == "P2PKH":
                 if key.point.address(network=BITCOIN_NETWORK) == funding_address:
@@ -122,7 +148,8 @@ def send_testnet_payment_from_funding_address(
             input_count=len(spending_utxos),
             p2pkh_output_count=(1 if funding_address_type == "P2PKH" else 0),
             p2wpkh_output_count=(1 if funding_address_type == "P2WPKH" else 0),
-            p2sh_output_count=1
+            p2sh_output_count=(1 if destination_address_type == "P2SH" else 0),
+            p2wsh_output_count=(1 if destination_address_type == "P2WSH" else 0),
         )
         tx_size = tx_size_stats["tx_vbytes"]
         logging.info(f"Calculated transaction size upper bound: {tx_size_stats["tx_vbytes"]} vbytes")
@@ -154,7 +181,7 @@ def send_testnet_payment_from_funding_address(
             if not sig_valid:
                 raise Exception("Unable to sign transaction inputs")
 
-            logging.info(f"Funding transaction: {funding_tx}")
+        logging.info(f"Funding transaction: {funding_tx}")
 
         if publish:
             tx_raw = funding_tx.serialize().hex()
@@ -176,7 +203,7 @@ def send_testnet_payment_from_funding_address(
 def create_unsigned_transaction_multisig(send_address, receive_address, send_amount_btc, fee_rate, public_keys, quorum):
     """
     Create an unsigned transaction for sending coins from a multisig address to another single address
-    Return the raw transaction object as well as the signature hashes for signing on the frontend with a hardware wallet
+    Return the raw transaction object as well as the signature hashes for signing on the frontend
     """
     try:
         logging.info("*************** CREATING UNSIGNED MULTISIG TX ***************")
@@ -191,8 +218,8 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
 
         if send_address_script_type == "P2SH":
             redeem_script = construct_p2sh_address_redeem_script(public_keys.values(), quorum)
-        else:
-            raise Exception("P2WSH not yet implemented")
+        elif send_address_script_type == "P2WSH":
+            redeem_script = construct_p2wsh_address_redeem_script(public_keys.values(), quorum)
 
         if redeem_script.address(BITCOIN_NETWORK) != send_address:
             raise Exception(f"Reconstructed multisig address does not match provided send address: {redeem_script.address(BITCOIN_NETWORK)} != {send_address}")
@@ -204,6 +231,7 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
         spending_utxos = select_utxos_lifo(
             sending_address_utxos, sending_amount_sats
         )
+        # TODO: fix dust transactions
         logging.info(f"Selected spending UTXOs: {spending_utxos}")
         if len(spending_utxos) > 1:
             raise Exception("Only single UTXO signing currently supported")
@@ -244,7 +272,8 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
 
         signature_hashes = []
         if is_segwit_tx:
-            raise Exception("P2WSH not yet implemented")
+            for i in range(len(unsigned_tx_obj.tx_ins)):
+                signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_bip143(i, None, redeem_script), 32).hex())
         else:
             for i in range(len(unsigned_tx_obj.tx_ins)):
                 signature_hashes.append(int_to_big_endian(unsigned_tx_obj.sig_hash_legacy(i, redeem_script), 32).hex())
@@ -259,28 +288,33 @@ def create_unsigned_transaction_multisig(send_address, receive_address, send_amo
         return jsonify(error=str(e)), 400
 
 
-def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_public_keys, redeem_script_hex, publish=False):
+def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_public_keys, address_type, redeem_script_hex, publish=False):
     try:
         logging.info("*************** FINALIZING MULTISIG TX ***************")
         logging.info(f"Input signature data: {signature_data}")
         logging.info(f"Input public keys: {sec_public_keys}")
         tx_obj = Tx.parse_hex(transaction_data)
+        tx_obj.network = BITCOIN_NETWORK
+        logging.info(f"Imported Transaction: {tx_obj}")
         pubkey_points = []
         for i in range(len(sec_public_keys.values())):
             key = sec_public_keys[str(i)]
             pubkey_points.append(S256Point.parse(bytes.fromhex(key)))
 
-        tx_in = tx_obj.tx_ins[0]
-
-        # TODO: Handle P2WSH
-        redeem_script = RedeemScript.parse(raw=bytes.fromhex(redeem_script_hex))
-
-        logging.info(f"Redeem script: {redeem_script}")
-        sig_hash = tx_obj.sig_hash_legacy(0, redeem_script)
-        logging.info(f"Signature hash script: {hex(sig_hash)}")
-
         # TODO: Handle multi input transactions
         TX_INPUT_INDEX = 0
+
+        if address_type == "P2SH":
+            redeem_script = RedeemScript.parse(raw=bytes.fromhex(redeem_script_hex))
+            logging.info(f"Redeem script: {redeem_script}")
+            sig_hash = tx_obj.sig_hash_legacy(TX_INPUT_INDEX, redeem_script)
+            logging.info(f"Signature hash script: {hex(sig_hash)}")
+        elif address_type == "P2WSH":
+            redeem_script = WitnessScript.parse(raw=bytes.fromhex(redeem_script_hex))
+            sig_hash = tx_obj.sig_hash_bip143(TX_INPUT_INDEX, None, redeem_script)
+            logging.info(f"Signature hash script: {hex(sig_hash)}")
+        else:
+            raise Exception(f"Unsupported address type: {address_type}")
 
         der_signatures = []
         for i in range(len(signature_data.values())):
@@ -296,11 +330,11 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
 
             valid = point.verify(sig_hash, signature)
             logging.info(f"Signature {i} verified : {valid}")
-            check_sig = tx_obj.check_sig_legacy(
+            check_sig = tx_obj.check_sig_segwit(
                 TX_INPUT_INDEX,
                 point,
                 signature,
-                redeem_script=redeem_script,
+                witness_script=redeem_script,
             )
             logging.info(f"Signature {i} transaction check : {check_sig}")
 
@@ -310,7 +344,10 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
         # finalize signatures
         sighash_byte = int_to_byte(SIGHASH_ALL)
         final_signatures = [sig.der() + sighash_byte for sig in der_signatures]
-        tx_in.finalize_p2sh_multisig(final_signatures, redeem_script)
+        if address_type == "P2SH":
+            tx_obj.tx_ins[TX_INPUT_INDEX].finalize_p2sh_multisig(final_signatures, redeem_script)
+        elif address_type == "P2WSH":
+            tx_obj.tx_ins[TX_INPUT_INDEX].finalize_p2wsh_multisig(final_signatures, redeem_script)
 
         logging.info(f"TX Details: {tx_obj}")
 

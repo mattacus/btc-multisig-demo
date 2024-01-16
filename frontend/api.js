@@ -1,3 +1,5 @@
+import { MULTISIG_ADDRESS_TYPES } from "./const";
+
 const { SERVER_BASE_URL } = process.env;
 
 class BackendAPI {
@@ -79,15 +81,7 @@ class BackendAPI {
   }
 
   async createMultisigAddress(publicKeys, quorum, addressType) {
-    let endpoint;
-    if (addressType === "p2sh") {
-      endpoint = "create_p2sh_multisig";
-    } else if (addressType === "p2wsh") {
-      endpoint = "create_p2wsh_multisig";
-    } else {
-      throw new Error("Invalid multisig address type");
-    }
-    let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/${endpoint}`;
+    let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/create_multisig_address`;
 
     const response = await fetch(fetchUrl, {
       method: "POST",
@@ -95,7 +89,11 @@ class BackendAPI {
         ...this.fetchConfig.headers,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ public_keys: publicKeys, quorum }),
+      body: JSON.stringify({
+        public_keys: publicKeys,
+        quorum,
+        address_type: addressType,
+      }),
     });
     if (!response.ok) {
       const responseBody = await response.json();
@@ -183,6 +181,7 @@ class BackendAPI {
     transactionData,
     publicKeys,
     redeemScript,
+    addressType,
     publish
   ) {
     let fetchUrl = `${this.fetchConfig.basePath}/api/multisig/finalize_transaction`;
@@ -196,6 +195,7 @@ class BackendAPI {
         signature_data: signatures,
         transaction_data: transactionData,
         public_keys: publicKeys,
+        address_type: addressType,
         redeem_script: redeemScript,
         publish: publish.toString(),
       }),

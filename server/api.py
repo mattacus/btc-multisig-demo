@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from services import (
     get_testnet_funding_addresses,
     get_address_basic_info,
-    create_p2sh_address_details,
+    create_multisig_address_details,
     send_testnet_payment_from_funding_address,
     create_unsigned_transaction_multisig,
     finalize_signed_multisig_transaction,
@@ -27,17 +27,13 @@ def address_info(address):
     return get_address_basic_info(address)
 
 
-@api.route("multisig/create_p2sh_multisig", methods=["POST"])
-def get_p2sh_multisig_address():
+@api.route("multisig/create_multisig_address", methods=["POST"])
+def create_multisig_address():
     data = request.get_json()
     pubkeys = data.get("public_keys")
     quorum = data.get("quorum")
-    return create_p2sh_address_details(pubkeys, quorum)
-
-
-@api.route("multisig/create_p2wsh_multisig", methods=["POST"])
-def get_p2wsh_multisig_address():
-    return jsonify(error=str("Not yet implemented")), 400
+    address_type = data.get("address_type")
+    return create_multisig_address_details(pubkeys, quorum, address_type)
 
 
 @api.route("multisig/fund_multisig_address", methods=["POST"])
@@ -85,6 +81,7 @@ def finalize_transaction():
     signature_data = data.get("signature_data")
     transaction_data = data.get("transaction_data")
     sec_public_keys = data.get("public_keys")
+    address_type = data.get("address_type")
     redeem_script_hex = data.get("redeem_script")
     publish = data.get(
         "publish"
@@ -93,6 +90,7 @@ def finalize_transaction():
         signature_data,
         transaction_data,
         sec_public_keys,
+        address_type,
         redeem_script_hex,
         publish.lower() == "true",
     )

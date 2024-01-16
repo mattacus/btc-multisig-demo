@@ -50,8 +50,8 @@ const KeySetupControls = () => {
     Object.keys(multisigContext.publicKeyList).length >= 2;
 
   const createMultisigAddressMutation = useMutation({
-    mutationFn: ({ pubKeys, quorum }) =>
-      backendApi.createMultisigAddress(pubKeys, quorum, "p2sh"),
+    mutationFn: ({ pubKeys, quorum, addressType }) =>
+      backendApi.createMultisigAddress(pubKeys, quorum, addressType),
     onSuccess: (data) => {
       multisigDispatch({
         type: "SET_MULTISIG_ADDRESS",
@@ -103,7 +103,8 @@ const KeySetupControls = () => {
 
           createMultisigAddressMutation.mutate({
             pubKeys: parsedData.publicKeys,
-            quorum: parsedData.quorum.m,
+            quorum: parsedData.quorum,
+            addressType: parsedData.addressType,
           });
         } else {
           throw new Error("Invalid file format");
@@ -214,7 +215,8 @@ const KeySetupControls = () => {
                 onClick={() => {
                   createMultisigAddressMutation.mutate({
                     pubKeys: multisigContext.publicKeyList,
-                    quorum: multisigContext.quorum.m,
+                    quorum: multisigContext.quorum,
+                    addressType: multisigContext.multisigAddressType,
                   });
                 }}
               >

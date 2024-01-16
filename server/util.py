@@ -34,6 +34,7 @@ def get_testnet_funding_private_keys():
     """
     keys = []
     for secret in TESTNET_FUNDING_ADDRESS_SECRETS.split(","):
+        secret = secret.strip()
         keys.append(PrivateKey(secret=format_plaintext_private_key_secret(secret)))
     return keys
 
