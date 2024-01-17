@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from services import (
     get_testnet_funding_addresses,
     get_address_basic_info,

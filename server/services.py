@@ -17,7 +17,7 @@ from util import (
     format_signature_der
 )
 from calc_tx_size import calc_tx_size
-from settings import BITCOIN_NETWORK, FEE_BUMP_SATS
+from settings import BITCOIN_NETWORK, FEE_BUMP_SATS, TESTNET_FUNDING_ADDRESS_SECRETS, TESTNET_FUNDING_ADDRESSES
 
 
 def get_testnet_funding_addresses():
@@ -25,15 +25,21 @@ def get_testnet_funding_addresses():
     Return a list of available funding addresses for testing purposes
     """
 
-    funding_keys = get_testnet_funding_private_keys()
-    legacy_addresses = [
-        key.point.address(network=BITCOIN_NETWORK) for key in funding_keys
-    ]
-    segwit_addresses = [
-        key.point.p2wpkh_address(network=BITCOIN_NETWORK) for key in funding_keys
-    ]
+    # Direct address import method
+    if TESTNET_FUNDING_ADDRESSES and len(TESTNET_FUNDING_ADDRESSES.split(",")) > 0:
+        return TESTNET_FUNDING_ADDRESSES.split(",")
 
-    return legacy_addresses + segwit_addresses
+    # mnemonic secret method
+    elif TESTNET_FUNDING_ADDRESS_SECRETS and len(TESTNET_FUNDING_ADDRESS_SECRETS.split(",")) > 0:
+        funding_keys = get_testnet_funding_private_keys()
+        legacy_addresses = [
+            key.point.address(network=BITCOIN_NETWORK) for key in funding_keys
+        ]
+        segwit_addresses = [
+            key.point.p2wpkh_address(network=BITCOIN_NETWORK) for key in funding_keys
+        ]
+
+        return legacy_addresses + segwit_addresses
 
 
 def get_address_basic_info(address):
