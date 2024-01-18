@@ -1,4 +1,5 @@
 # Bitcoin Multisig Demo
+![btc-multisig-demo-screenshot](https://github.com/mattacus/btc-multisig-demo/assets/15896597/7cd84463-4d9a-4900-a431-1d6a9b20448f)
 
 This is a simple app to demonstrate how multisignature Bitcoin addresses can be created, funded, and unlocked and spent from. Currently it supports legacy (P2SH) and SegWit (P2WSH) multisig addresses.
 
