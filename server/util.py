@@ -1,7 +1,7 @@
 from buidl import PrivateKey
 from buidl.helper import hash256, little_endian_to_int
 from buidl.script import decode_bech32
-from settings import TESTNET_FUNDING_ADDRESS_SECRETS
+from settings import TESTNET_FUNDING_ADDRESS_SECRETS, TESTNET_FUNDING_PRIVATE_KEYS
 import math
 
 
@@ -33,9 +33,20 @@ def get_testnet_funding_private_keys():
     in the environment variable TESTNET_FUNDING_ADDRESS_SECRETS
     """
     keys = []
-    for secret in TESTNET_FUNDING_ADDRESS_SECRETS.split(","):
-        secret = secret.strip()
-        keys.append(PrivateKey(secret=format_plaintext_private_key_secret(secret)))
+    if (
+        TESTNET_FUNDING_PRIVATE_KEYS
+        and len(TESTNET_FUNDING_PRIVATE_KEYS.split(",")) > 0
+    ):
+        for secret in TESTNET_FUNDING_PRIVATE_KEYS.split(","):
+            secret = secret.strip()
+            keys.append(PrivateKey(secret=secret))
+    elif (
+        TESTNET_FUNDING_ADDRESS_SECRETS
+        and len(TESTNET_FUNDING_ADDRESS_SECRETS.split(",")) > 0
+    ):
+        for secret in TESTNET_FUNDING_ADDRESS_SECRETS.split(","):
+            secret = secret.strip()
+            keys.append(PrivateKey(secret=format_plaintext_private_key_secret(secret)))
     return keys
 
 

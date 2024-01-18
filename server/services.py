@@ -324,7 +324,7 @@ def finalize_signed_multisig_transaction(signature_data, transaction_data, sec_p
 
         quorum = redeem_script.get_quorum()
         logging.info(f"Redeem script: {redeem_script}")
-        logging.info(f"Signature hash script: {hex(sig_hash)}")
+        logging.info(f"Signature hash: {hex(sig_hash)}")
         logging.info(f"Multisig quorum: {quorum}")
 
         if len(signature_data.values()) < quorum[0]:
